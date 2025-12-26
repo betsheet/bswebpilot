@@ -6,7 +6,7 @@ import random
 from tkinter import Tk
 from camoufox.async_api import AsyncCamoufox
 from playwright.async_api import Browser, BrowserContext, Page, Locator, TimeoutError, expect
-from bswebpilot.bswebpilot.utils.locator import BSLocator
+from bswebpilot.utils.locator import BSLocator
 
 
 class BSCmfx:

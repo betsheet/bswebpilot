@@ -1,0 +1,13 @@
+pyproject.toml
+bswebpilot/__init__.py
+bswebpilot.egg-info/PKG-INFO
+bswebpilot.egg-info/SOURCES.txt
+bswebpilot.egg-info/dependency_links.txt
+bswebpilot.egg-info/requires.txt
+bswebpilot.egg-info/top_level.txt
+bswebpilot/bsplaywright/__init__.py
+bswebpilot/bsplaywright/bscmfx.py
+bswebpilot/bsselenium/__init__.py
+bswebpilot/bsselenium/webdriver.py
+bswebpilot/utils/__init__.py
+bswebpilot/utils/locator.py
