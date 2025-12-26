@@ -191,8 +191,11 @@ class BSCmfx:
         )
 
     async def check_attribute_is_equals(self, locator: BSLocator, attr: str, content: str, ignore_case: bool = False, timeout: float = 10) -> bool:
-        attribute_value: str = await self.page.locator(self.get_pw_locator(locator)).get_attribute(attr, timeout=timeout * 1000)
+        attribute_value: str = await self.get_attribute_value(locator, attr, timeout)
         return attribute_value.lower() == content.lower() if ignore_case else attribute_value == content
+
+    async def get_attribute_value(self, locator: BSLocator, attr: str, timeout: float = 10) -> str | None:
+        return await self.page.locator(self.get_pw_locator(locator)).get_attribute(attr, timeout=timeout * 1000)
 
     # ========== Métodos de obtención de información ==========
     
