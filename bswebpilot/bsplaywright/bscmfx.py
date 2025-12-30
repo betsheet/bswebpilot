@@ -4,6 +4,8 @@ import re
 import asyncio
 import random
 from tkinter import Tk
+from typing import Any
+
 from camoufox.async_api import AsyncCamoufox
 from playwright.async_api import Browser, BrowserContext, Page, Locator, TimeoutError, expect
 from bswebpilot.utils.locator import BSLocator
@@ -220,7 +222,10 @@ class BSCmfx:
 
     async def get_elements_count(self, locator: BSLocator, timeout: float = 10) -> int:
         """Obtiene el número de elementos que coinciden con el locator."""
-        await self.wait_element_to_be_present(locator, timeout)
+        try:
+            await self.wait_element_to_be_present(locator, timeout)
+        except TimeoutError:
+            return 0
         return await self.page.locator(self.get_pw_locator(locator)).count()
 
     # ========== Métodos de interacción con elementos ==========
@@ -299,10 +304,10 @@ class BSCmfx:
             await input_element.press(char)
             await self.wait_random(min_delay, max_delay)
 
-    async def clear_and_send_keys(self, locator: BSLocator, value: str) -> None:
+    async def clear_and_send_keys(self, locator: BSLocator, value: Any) -> None:
         """Limpia un input y escribe nuevo contenido de forma humanizada."""
         await self.clear(locator)
-        await self.human_send_keys(locator, value)
+        await self.human_send_keys(locator, str(value))
 
     # ========== Métodos de scroll ==========
     
