@@ -233,7 +233,6 @@ class BSCmfx:
     async def click_element(self, locator: BSLocator, timeout: float = 10) -> bool:
         """Hace clic en un elemento."""
         try:
-            #await self.mouse_wheel_scroll(locator, timeout) # TODO: probar si quitando esto sigue funcionando bien
             await self.page.locator(self.get_pw_locator(locator)).click(timeout=timeout*1000)
             return True
         except TimeoutError:
