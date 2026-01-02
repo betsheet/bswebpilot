@@ -230,13 +230,9 @@ class BSCmfx:
 
     # ========== Métodos de interacción con elementos ==========
     
-    async def click_element(self, locator: BSLocator, timeout: float = 10) -> bool:
+    async def click_element(self, locator: BSLocator, timeout: float = 10) -> None:
         """Hace clic en un elemento."""
-        try:
-            await self.page.locator(self.get_pw_locator(locator)).click(timeout=timeout*1000)
-            return True
-        except TimeoutError:
-            return False
+        await self.page.locator(self.get_pw_locator(locator)).click(timeout=timeout*1000)
 
     async def click_nth_element(self, locator: BSLocator, index: int, timeout: float = 10) -> None:
         """Hace clic en el elemento en la posición especificada."""
