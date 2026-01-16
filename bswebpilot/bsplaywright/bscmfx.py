@@ -231,8 +231,15 @@ class BSCmfx:
     # ========== Métodos de interacción con elementos ==========
     async def manual_click_element(self, locator: BSLocator, timeout: float = 10) -> None:
         locator: Locator = self.page.locator(self.get_pw_locator(locator))
+        locator_box = await locator.first.bounding_box(timeout=timeout*1000)
         await locator.hover()
         await self.wait_random(0.1, 0.2)
+
+        await self.page.mouse.move(
+            locator_box["x"] + locator_box["width"] / 2,
+            locator_box["y"] + locator_box["height"] / 2
+        )
+
         await self.page.mouse.down()
         await self.wait_random(0.025, 0.075)
         await self.page.mouse.up()
