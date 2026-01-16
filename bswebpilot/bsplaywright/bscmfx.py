@@ -340,6 +340,10 @@ class BSCmfx:
             }
         """, elem_handle)
 
+
+    async def get_current_url(self) -> str:
+        """Obtiene la URL actual de la página."""
+        return self.page.url
     # ========== Métodos de limpieza ==========
     
     async def quit(self):
