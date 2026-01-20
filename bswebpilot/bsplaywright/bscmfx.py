@@ -311,7 +311,7 @@ class BSCmfx:
         await input_element.focus()
         await self.clear_input(input_element, timeout)
         for char in content:
-            await input_element.press(char)
+            await input_element.type(char)
             await self.wait_random(min_delay, max_delay)
 
     async def clear_and_send_keys(self, locator: BSLocator, value: Any) -> None:
