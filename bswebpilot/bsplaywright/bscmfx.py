@@ -20,7 +20,8 @@ class BSCmfx:
     browser: Browser | BrowserContext | None = None
     page: Page | None = None
 
-    def __init__(self, is_headless: bool = False, humanize: bool = True, **camoufox_config):
+    def __init__(self, is_headless: bool = False, humanize: bool = True, screen_resolution: tuple[int, int] | None = None,
+                 **camoufox_config):
         """
         Constructor que almacena la configuración inicial.
         La inicialización real del navegador se hace en initialize().
@@ -28,10 +29,13 @@ class BSCmfx:
         Args:
             is_headless (bool): Si es True, el navegador se ejecuta sin interfaz gráfica.
             humanize (bool): Si es True, humaniza las interacciones con el navegador.
+            screen_resolution (tuple[int, int] | None): Resolución de pantalla (ancho, alto).
+            Si es None, se detecta automáticamente.
             **camoufox_config: Argumentos adicionales de configuración para Camoufox.
         """
         self.is_headless = is_headless
         self.humanize = humanize
+        self.screen_resolution = screen_resolution
         self.camoufox_config = camoufox_config
 
     async def initialize(self):
@@ -45,7 +49,7 @@ class BSCmfx:
             'headless': self.is_headless,
             'os': os_and_web_gl_prop[0],
             'webgl_config': os_and_web_gl_prop[1],
-            'window': self._get_screen_resolution(),
+            'window': self.screen_resolution if self.screen_resolution is not None else self._get_screen_resolution(),
             'locale': self._get_locale(),
             'humanize': self.humanize,
             **self.camoufox_config
