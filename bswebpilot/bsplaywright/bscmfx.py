@@ -226,11 +226,12 @@ class BSCmfx:
 
     async def get_elements_count(self, locator: BSLocator, timeout: float = 10) -> int:
         """Obtiene el número de elementos que coinciden con el locator."""
+        pw_loc: Locator = self.page.locator(self.get_pw_locator(locator))
         try:
-            await self.wait_element_to_be_present(locator, timeout)
-        except AssertionError:
+            await pw_loc.wait_for(state='attached', timeout=timeout * 1000) #TODO: deberíamos usar wait_element_to_be_present
+            return await pw_loc.count()
+        except TimeoutError:
             return 0
-        return await self.page.locator(self.get_pw_locator(locator)).count()
 
     # ========== Métodos de interacción con elementos ==========
     async def manual_click_element(self, locator: BSLocator, timeout: float = 10) -> None:
