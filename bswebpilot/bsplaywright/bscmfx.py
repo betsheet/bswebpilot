@@ -228,7 +228,7 @@ class BSCmfx:
         """Obtiene el número de elementos que coinciden con el locator."""
         try:
             await self.wait_element_to_be_present(locator, timeout)
-        except TimeoutError:
+        except AssertionError:
             return 0
         return await self.page.locator(self.get_pw_locator(locator)).count()
 
