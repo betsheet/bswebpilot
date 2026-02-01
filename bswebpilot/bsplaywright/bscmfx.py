@@ -169,6 +169,14 @@ class BSCmfx:
         except TimeoutError:
             return False
 
+    async def is_element_not_present(self, locator: BSLocator, timeout: float = 10) -> bool:
+        """Verifica si un elemento NO está presente en el DOM."""
+        try:
+            await expect(self.page.locator(self.get_pw_locator(locator))).not_to_be_attached(timeout=timeout*1000)
+            return True
+        except AssertionError:
+            return False
+
     async def wait_element_to_be_present(self, locator: BSLocator, timeout: float = 10) -> None:
         """Espera a que un elemento esté presente en el DOM."""
         await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_attached(timeout=timeout*1000)
