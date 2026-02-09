@@ -20,7 +20,8 @@ class BSCmfx:
     browser: Browser | BrowserContext | None = None
     page: Page | None = None
 
-    def __init__(self, is_headless: bool = False, humanize: bool = True, **camoufox_config):
+    def __init__(self, is_headless: bool = False, humanize: bool = True, screen_resolution: tuple[int, int] | None = None,
+                 **camoufox_config):
         """
         Constructor que almacena la configuración inicial.
         La inicialización real del navegador se hace en initialize().
@@ -28,10 +29,13 @@ class BSCmfx:
         Args:
             is_headless (bool): Si es True, el navegador se ejecuta sin interfaz gráfica.
             humanize (bool): Si es True, humaniza las interacciones con el navegador.
+            screen_resolution (tuple[int, int] | None): Resolución de pantalla (ancho, alto).
+            Si es None, se detecta automáticamente.
             **camoufox_config: Argumentos adicionales de configuración para Camoufox.
         """
         self.is_headless = is_headless
         self.humanize = humanize
+        self.screen_resolution = screen_resolution
         self.camoufox_config = camoufox_config
 
     async def initialize(self):
@@ -45,7 +49,7 @@ class BSCmfx:
             'headless': self.is_headless,
             'os': os_and_web_gl_prop[0],
             'webgl_config': os_and_web_gl_prop[1],
-            'window': self._get_screen_resolution(),
+            'window': self.screen_resolution if self.screen_resolution is not None else self._get_screen_resolution(),
             'locale': self._get_locale(),
             'humanize': self.humanize,
             **self.camoufox_config
@@ -165,6 +169,14 @@ class BSCmfx:
         except TimeoutError:
             return False
 
+    async def is_element_not_present(self, locator: BSLocator, timeout: float = 10) -> bool:
+        """Verifica si un elemento NO está presente en el DOM."""
+        try:
+            await expect(self.page.locator(self.get_pw_locator(locator))).not_to_be_attached(timeout=timeout*1000)
+            return True
+        except AssertionError:
+            return False
+
     async def wait_element_to_be_present(self, locator: BSLocator, timeout: float = 10) -> None:
         """Espera a que un elemento esté presente en el DOM."""
         await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_attached(timeout=timeout*1000)
@@ -222,11 +234,12 @@ class BSCmfx:
 
     async def get_elements_count(self, locator: BSLocator, timeout: float = 10) -> int:
         """Obtiene el número de elementos que coinciden con el locator."""
+        pw_loc: Locator = self.page.locator(self.get_pw_locator(locator))
         try:
-            await self.wait_element_to_be_present(locator, timeout)
+            await pw_loc.first.wait_for(state='attached', timeout=timeout * 1000)
+            return await pw_loc.count()
         except TimeoutError:
             return 0
-        return await self.page.locator(self.get_pw_locator(locator)).count()
 
     # ========== Métodos de interacción con elementos ==========
     async def manual_click_element(self, locator: BSLocator, timeout: float = 10) -> None:
@@ -311,7 +324,7 @@ class BSCmfx:
         await input_element.focus()
         await self.clear_input(input_element, timeout)
         for char in content:
-            await input_element.press(char)
+            await input_element.type(char)
             await self.wait_random(min_delay, max_delay)
 
     async def clear_and_send_keys(self, locator: BSLocator, value: Any) -> None:
