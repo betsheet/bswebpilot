@@ -3,7 +3,7 @@ import locale
 import re
 import asyncio
 import random
-from tkinter import Tk
+import subprocess
 from typing import Any
 
 from camoufox.async_api import AsyncCamoufox
@@ -83,12 +83,52 @@ class BSCmfx:
 
     @staticmethod
     def _get_screen_resolution() -> tuple[int, int]:
-        """Obtiene la resolución de pantalla del sistema."""
-        root: Tk = Tk()
-        root.withdraw()
-        to_return: tuple[int, int] = root.winfo_screenwidth(), root.winfo_screenheight()
-        root.destroy()
-        return to_return
+        """Obtiene la resolución de pantalla del sistema sin usar tkinter."""
+        try:
+            os_name = platform.system()
+
+            if os_name == "Darwin":  # macOS
+                output = subprocess.check_output(['system_profiler', 'SPDisplaysDataType']).decode()
+                # Buscar resolución en el formato "Resolution: 1920 x 1080"
+                import re
+                match = re.search(r'Resolution:\s*(\d+)\s*x\s*(\d+)', output)
+                if match:
+                    return (int(match.group(1)), int(match.group(2)))
+                # Fallback para macOS usando screenresolution
+                try:
+                    result = subprocess.check_output(['screenresolution', 'get']).decode().strip()
+                    # Formato: "1920x1080"
+                    width, height = result.split('x')
+                    return (int(width), int(height))
+                except (FileNotFoundError, IndexError, ValueError):
+                    pass
+
+            elif os_name == "Windows":
+                try:
+                    import ctypes
+                    user32 = ctypes.windll.user32
+                    width = user32.GetSystemMetrics(0)
+                    height = user32.GetSystemMetrics(1)
+                    return (width, height)
+                except (ImportError, AttributeError):
+                    pass
+
+            elif os_name == "Linux":
+                try:
+                    output = subprocess.check_output(['xrandr']).decode()
+                    # Buscar patrón "1920x1080+0+0"
+                    match = re.search(r'(\d+)x(\d+)\s*\+', output)
+                    if match:
+                        return (int(match.group(1)), int(match.group(2)))
+                except (FileNotFoundError, IndexError, ValueError):
+                    pass
+
+            # Fallback por defecto: resolución estándar 1920x1080
+            return (1920, 1080)
+
+        except Exception:
+            # Si algo falla, retornar una resolución estándar
+            return (1920, 1080)
 
     @staticmethod
     def _get_platform_and_web_gl() -> tuple[str, tuple[str, str]]:

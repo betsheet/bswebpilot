@@ -28,7 +28,6 @@ dependencies = [
     "playwright>=1.40.0",
     "selenium>=4.0.0",
     "undetected-chromedriver>=3.0.0",
-    "tk>=0.1.0",
 ]
 
 [project.optional-dependencies]
