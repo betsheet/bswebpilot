@@ -3,7 +3,7 @@ import locale
 import re
 import asyncio
 import random
-from tkinter import Tk
+import subprocess
 from typing import Any
 
 from camoufox.async_api import AsyncCamoufox
