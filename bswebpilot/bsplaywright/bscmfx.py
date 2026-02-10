@@ -84,11 +84,7 @@ class BSCmfx:
     @staticmethod
     def _get_screen_resolution() -> tuple[int, int]:
         """Obtiene la resolución de pantalla del sistema."""
-        root: Tk = Tk()
-        root.withdraw()
-        to_return: tuple[int, int] = root.winfo_screenwidth(), root.winfo_screenheight()
-        root.destroy()
-        return to_return
+        return 1920, 1080
 
     @staticmethod
     def _get_platform_and_web_gl() -> tuple[str, tuple[str, str]]:
