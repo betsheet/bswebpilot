@@ -79,7 +79,8 @@ class BSCmfx:
     @staticmethod
     def _get_locale() -> str:
         """Obtiene el locale del sistema."""
-        return locale.getdefaultlocale()[0].replace('_', '-')
+       # TODO: 'C' no es válido
+        return locale.getdefaultlocale()[1].replace('_', '-')
 
     @staticmethod
     def _get_screen_resolution() -> tuple[int, int]:
@@ -150,7 +151,8 @@ class BSCmfx:
         await self.wait_random(0.15, 0.3)
 
     # ========== Métodos de verificación de elementos ==========
-
+    #   TODO: incluir un parámetro booleano opcional a False ("safe_mode" o algo así) por defecto para controlar si se
+    #   eleva excepción cuando se cumple el timeout
     async def is_element_present(self, locator: BSLocator, timeout: float = 10) -> bool:
         """Verifica si un elemento está presente en el DOM."""
         try:
@@ -283,6 +285,7 @@ class BSCmfx:
         await self.page.locator(self.get_pw_locator(locator)).nth(index).click(timeout=timeout * 1000)
 
     # TODO: adaptar a iframes y a nth
+    # TODO: necesito un método para obtener un BSLocator pasándole los mismos argumentos que a click_element_by_partial_texts
     async def click_element_by_partial_texts(self, locator: BSLocator, partial_containing_texts: list[str],
                                              partial_non_containing_texts: list[str] = None,
                                              timeout: float = 10, frame_loc: BSLocator | None = None) -> bool:
