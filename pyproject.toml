@@ -27,7 +27,9 @@ dependencies = [
     "camoufox>=0.1.0",
     "playwright>=1.40.0",
     "selenium>=4.0.0",
+    "setuptools>=70.0.0",
     "undetected-chromedriver>=3.0.0",
+    "webdriver-manager>=4.0.0",
 ]
 
 [project.optional-dependencies]
@@ -62,6 +64,9 @@ line_length = 120
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+markers = [
+    "manual: tests que requieren navegador visible y se ejecutan manualmente",
+]
 
 [tool.mypy]
 python_version = "3.10"

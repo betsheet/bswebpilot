@@ -1,4 +1,7 @@
+import platform
 import random
+import subprocess
+import sys
 import time
 
 import undetected_chromedriver as uc  # TODO: mirar v2 https://pypi.org/project/undetected-chromedriver/2.1.1/
@@ -6,8 +9,9 @@ from selenium.common import TimeoutException, NoSuchElementException, ElementCli
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from webdriver_manager.chrome import ChromeDriverManager
 
-from bswebpilot.bswebpilot.utils.locator import BSLocator
+from bswebpilot.utils.locator import BSLocator
 
 
 class BSWebDriver:
@@ -20,12 +24,52 @@ class BSWebDriver:
     min_human_typing_wait: float = 0.04
     max_human_typing_wait: float = 0.19
 
+    @staticmethod
+    def _codesign_if_macos(path: str) -> None:
+        """
+        En macOS, aplica una firma ad-hoc al binario indicado para que
+        Gatekeeper permita su ejecución sin intervención del usuario.
+        Es equivalente a: codesign --force --sign - <path>
+        """
+        if sys.platform != "darwin":
+            return
+        try:
+            subprocess.run(
+                ["codesign", "--force", "--sign", "-", path],
+                check=True,
+                capture_output=True,
+            )
+        except Exception:
+            pass  # Si falla (ej. ya firmado y válido), ignorar
+
+    @staticmethod
+    def _get_driver_path() -> str:
+        """
+        Descarga el chromedriver adecuado para la arquitectura actual.
+        En Apple Silicon (arm64) fuerza la descarga del binario mac-arm64
+        para evitar que webdriver-manager descargue el binario x86_64
+        que macOS mata con SIGKILL (-9).
+        Tras la descarga, aplica firma ad-hoc para que Gatekeeper lo permita.
+        """
+        machine = platform.machine().lower()
+        if machine == "arm64":
+            from webdriver_manager.core.os_manager import OperationSystemManager
+            manager = ChromeDriverManager(os_system_manager=OperationSystemManager(os_type="mac-arm64"))
+        else:
+            manager = ChromeDriverManager()
+        path = manager.install()
+        BSWebDriver._codesign_if_macos(path)
+        return path
+
     def __init__(self, is_headless: bool = False):
         self.options = uc.ChromeOptions()
         self.options.add_argument("--incognito")
         if is_headless:
             self.headless()
-        self.driver = uc.Chrome(self.options)
+        # Descarga el chromedriver correcto para la arquitectura actual
+        # (arm64 en Apple Silicon, x86_64 en Intel).
+        driver_path = self._get_driver_path()
+        self.driver = uc.Chrome(options=self.options, driver_executable_path=driver_path)
         self.driver.execute_cdp_cmd(
             "Network.setUserAgentOverride", {
                 "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"}
