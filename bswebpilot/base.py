@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from bswebpilot.utils.locator import BSLocator
 
 
-class BSWebPilot(ABC):
+class BSWebPilotSync(ABC):
 
     def __init__(self, is_headless: bool = False, window_resolution: tuple[int, int] | None = None):
         self.is_headless = is_headless

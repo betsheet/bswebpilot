@@ -12,13 +12,13 @@ from selenium.webdriver.support import expected_conditions as EC
 from typing_extensions import override
 from webdriver_manager.chrome import ChromeDriverManager
 
-from ..base import BSWebPilot
+from ..base import BSWebPilotSync
 from bswebpilot.utils.locator import BSLocator
 
 
 # TODO: implementar métodos faltantes y usar timeout
 
-class BSWebDriver(BSWebPilot):
+class BSWebDriverSync(BSWebPilotSync):
 
     driver: uc.Chrome | None = None
     options: uc.ChromeOptions | None = None
@@ -284,5 +284,5 @@ class BSWebDriver(BSWebPilot):
         else:
             manager = ChromeDriverManager()
         path = manager.install()
-        BSWebDriver._codesign_if_macos(path)
+        BSWebDriverSync._codesign_if_macos(path)
         return path
