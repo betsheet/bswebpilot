@@ -17,6 +17,8 @@ from bswebpilot.utils.locator import BSLocator
 
 
 class BSWebDriver(BSWebPilot):
+    pass
+
     driver: uc.Chrome | None = None
     options: uc.ChromeOptions | None = None
 
@@ -26,53 +28,11 @@ class BSWebDriver(BSWebPilot):
     min_human_typing_wait: float = 0.04
     max_human_typing_wait: float = 0.19
 
-    @staticmethod
-    def _codesign_if_macos(path: str) -> None:
-        """
-        En macOS, aplica una firma ad-hoc al binario indicado para que
-        Gatekeeper permita su ejecución sin intervención del usuario.
-        Es equivalente a: codesign --force --sign - <path>
-        """
-        if sys.platform != "darwin":
-            return
-        try:
-            subprocess.run(
-                ["codesign", "--force", "--sign", "-", path],
-                check=True,
-                capture_output=True,
-            )
-        except Exception:
-            pass  # Si falla (ej. ya firmado y válido), ignorar
-
-    @staticmethod
-    def _get_driver_path() -> str:
-        """
-        Descarga el chromedriver adecuado para la arquitectura actual.
-        En Apple Silicon (arm64) fuerza la descarga del binario mac-arm64
-        para evitar que webdriver-manager descargue el binario x86_64
-        que macOS mata con SIGKILL (-9).
-        Tras la descarga, aplica firma ad-hoc para que Gatekeeper lo permita.
-        """
-        machine = platform.machine().lower()
-        if machine == "arm64":
-            from webdriver_manager.core.os_manager import OperationSystemManager
-            manager = ChromeDriverManager(os_system_manager=OperationSystemManager(os_type="mac-arm64"))
-        else:
-            manager = ChromeDriverManager()
-        path = manager.install()
-        BSWebDriver._codesign_if_macos(path)
-        return path
-
-    def __init__(self, is_headless: bool = False):
-        super().__init__(is_headless)
+    def __init__(self, is_headless: bool = False, window_resolution: tuple[int, int] | None = None):
+        super().__init__(is_headless, window_resolution)
         self._set_chromedriver_option(is_headless)
+        self._build_chromedriver(window_resolution)
 
-        driver_path = self._get_driver_path()
-        self.driver = uc.Chrome(options=self.options, driver_executable_path=driver_path)
-        self.driver.execute_cdp_cmd(
-            "Network.setUserAgentOverride", {
-                "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"}
-        )
 
     def _set_chromedriver_option(self, is_headless: bool = False) -> None:
         self.options = uc.ChromeOptions()
@@ -84,12 +44,18 @@ class BSWebDriver(BSWebPilot):
                     "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"}
             )"""
 
-    def _build_chromedriver(self) -> None:
+    def _build_chromedriver(self, window_resolution: tuple[int, int] | None = None) -> None:
         self.driver = uc.Chrome(options=self.options, driver_executable_path=self._get_driver_path())
         self.driver.execute_cdp_cmd(
             "Network.setUserAgentOverride", {
                 "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"}
         )
+        if window_resolution:
+            self.driver.set_window_size(*window_resolution)
+
+    @override
+    def initialize(self) -> None:
+        pass
 
     @override
     def quit(self):
@@ -197,8 +163,9 @@ class BSWebDriver(BSWebPilot):
 
     # Explicit waits
     # TODO: añadir opción para generar o no excepción
-    def wait_element_to_be_present(self, locator: BSLocator, tolerance_time: float = 10):
-        WebDriverWait(self.driver, tolerance_time).until(EC.presence_of_element_located(locator.as_tuple()))
+    @override
+    def wait_element_to_be_present(self, locator: BSLocator, timeout: float = 10):
+        WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located(locator.as_tuple()))
 
     def wait_element_to_be_clickable(self, locator: BSLocator, tolerance_time: float = 10,
                                      raise_exception: bool = True):
@@ -253,16 +220,48 @@ class BSWebDriver(BSWebPilot):
     def execute_script(self, script: str) -> None:
         self.driver.execute_script(script)
 
+    @override
     def save_screenshot(self, file_path: str = "screenshot.png"):
         self.driver.save_screenshot(file_path)
 
     def save_element_screenshot(self, element_locator: BSLocator, file_path: str = "screenshot.png"):
         self.find_element(element_locator).screenshot(file_path)
 
-    @staticmethod
-    def wait_random(_min: float, _max: float) -> None:
-        time.sleep(random.uniform(_min, _max))
+
 
     @staticmethod
-    def wait_static(wait_time: float) -> None:
-        time.sleep(wait_time)
+    def _codesign_if_macos(path: str) -> None:
+        """
+        En macOS, aplica una firma ad-hoc al binario indicado para que
+        Gatekeeper permita su ejecución sin intervención del usuario.
+        Es equivalente a: codesign --force --sign - <path>
+        """
+        if sys.platform != "darwin":
+            return
+        try:
+            subprocess.run(
+                ["codesign", "--force", "--sign", "-", path],
+                check=True,
+                capture_output=True,
+            )
+        except Exception:
+            pass  # Si falla (ej. ya firmado y válido), ignorar
+
+    @staticmethod
+    def _get_driver_path() -> str:
+        """
+        Descarga el chromedriver adecuado para la arquitectura actual.
+        En Apple Silicon (arm64) fuerza la descarga del binario mac-arm64
+        para evitar que webdriver-manager descargue el binario x86_64
+        que macOS mata con SIGKILL (-9).
+        Tras la descarga, aplica firma ad-hoc para que Gatekeeper lo permita.
+        """
+        machine = platform.machine().lower()
+        if machine == "arm64":
+            from webdriver_manager.core.os_manager import OperationSystemManager
+            manager = ChromeDriverManager(os_system_manager=OperationSystemManager(os_type="mac-arm64"))
+        else:
+            manager = ChromeDriverManager()
+        path = manager.install()
+        BSWebDriver._codesign_if_macos(path)
+        return path

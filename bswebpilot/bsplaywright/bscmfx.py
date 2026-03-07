@@ -9,7 +9,7 @@ from camoufox.async_api import AsyncCamoufox
 from playwright.async_api import Browser, BrowserContext, Page, Locator, TimeoutError, expect
 from bswebpilot.utils.locator import BSLocator
 
-
+# TODO: debe heredar de BSWebPilot e implementar sus métodos abstractos.
 class BSCmfx:
     """
     Envoltorio asíncrono para Camoufox, el cual a su vez envuelve a Playwright.
@@ -19,7 +19,7 @@ class BSCmfx:
     browser: Browser | BrowserContext | None = None
     page: Page | None = None
 
-    def __init__(self, is_headless: bool = False, humanize: bool = True, screen_resolution: tuple[int, int] | None = None,
+    def __init__(self, is_headless: bool = False, humanize: bool = True, window_resolution: tuple[int, int] | None = None,
                  **camoufox_config):
         """
         Constructor que almacena la configuración inicial.
@@ -28,13 +28,13 @@ class BSCmfx:
         Args:
             is_headless (bool): Si es True, el navegador se ejecuta sin interfaz gráfica.
             humanize (bool): Si es True, humaniza las interacciones con el navegador.
-            screen_resolution (tuple[int, int] | None): Resolución de pantalla (ancho, alto).
+            window_resolution (tuple[int, int] | None): Resolución de pantalla (ancho, alto).
             Si es None, se detecta automáticamente.
             **camoufox_config: Argumentos adicionales de configuración para Camoufox.
         """
         self.is_headless = is_headless
         self.humanize = humanize
-        self.screen_resolution = screen_resolution
+        self.screen_resolution = window_resolution
         self.camoufox_config = camoufox_config
 
     async def initialize(self):
