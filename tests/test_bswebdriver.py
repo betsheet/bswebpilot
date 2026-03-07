@@ -57,7 +57,7 @@ class TestBSWebDriverUnit:
 
     def test_wait_static_does_not_raise(self):
         """wait_static() no debe lanzar excepción con un tiempo pequeño."""
-        BSWebDriver.wait_static(0.01)
+        BSWebDriver.wait(0.01)
 
     def test_locator_css_as_tuple(self):
         """BSLocator.css() devuelve el by y value correctos."""

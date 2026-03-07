@@ -7,10 +7,11 @@ from typing import Any
 
 from camoufox.async_api import AsyncCamoufox
 from playwright.async_api import Browser, BrowserContext, Page, Locator, TimeoutError, expect
+from bswebpilot.base import BSWebPilotAsync
 from bswebpilot.utils.locator import BSLocator
 
-# TODO: debe heredar de BSWebPilot e implementar sus métodos abstractos.
-class BSCmfx:
+
+class BSCmfx(BSWebPilotAsync):
     """
     Envoltorio asíncrono para Camoufox, el cual a su vez envuelve a Playwright.
     Diseñado para mantener una sesión de navegador activa de forma asíncrona.
@@ -19,8 +20,8 @@ class BSCmfx:
     browser: Browser | BrowserContext | None = None
     page: Page | None = None
 
-    def __init__(self, is_headless: bool = False, humanize: bool = True, window_resolution: tuple[int, int] | None = None,
-                 **camoufox_config):
+    def __init__(self, is_headless: bool = False, humanize: bool = True,
+                 window_resolution: tuple[int, int] | None = None, **camoufox_config):
         """
         Constructor que almacena la configuración inicial.
         La inicialización real del navegador se hace en initialize().
@@ -32,6 +33,7 @@ class BSCmfx:
             Si es None, se detecta automáticamente.
             **camoufox_config: Argumentos adicionales de configuración para Camoufox.
         """
+        super().__init__(is_headless, window_resolution)
         self.is_headless = is_headless
         self.humanize = humanize
         self.screen_resolution = window_resolution
@@ -40,7 +42,7 @@ class BSCmfx:
     async def initialize(self):
         """
         Inicializa la instancia de Camoufox, lanza el navegador y crea una nueva página.
-        Este método debe ser llamado después de crear la instancia.
+        Debe ser llamado después de crear la instancia.
         """
         # Configuramos los parámetros principales para Camoufox
         os_and_web_gl_prop: tuple[str, tuple[str, str]] = self._get_platform_and_web_gl()
@@ -172,7 +174,7 @@ class BSCmfx:
         await asyncio.sleep(random.uniform(_min, _max))
 
     @staticmethod
-    async def wait_static(wait_time: float) -> None:
+    async def wait(wait_time: float) -> None:
         """Espera un tiempo fijo en segundos."""
         await asyncio.sleep(wait_time)
 
@@ -271,7 +273,7 @@ class BSCmfx:
             return 0
 
     # ========== Métodos de interacción con elementos ==========
-    async def manual_click_element(self, locator: BSLocator, timeout: float = 10) -> None:
+    async def manual_click(self, locator: BSLocator, timeout: float = 10) -> None:
         locator: Locator = self.page.locator(self._get_pw_locator(locator))
         await locator.wait_for(state='visible', timeout=timeout * 1000)
         await locator.hover()
@@ -287,17 +289,17 @@ class BSCmfx:
         await self.wait_random(0.025, 0.125)
         await self.page.mouse.up()
 
-    async def click_element(self, locator: BSLocator, timeout: float = 10) -> None:
+    async def click(self, locator: BSLocator, timeout: float = 10) -> None:
         """Hace clic en un elemento."""
         await self.page.locator(self._get_pw_locator(locator)).click(timeout=timeout * 1000)
 
-    async def click_nth_element(self, locator: BSLocator, index: int, timeout: float = 10) -> None:
+    async def click_nth(self, locator: BSLocator, index: int, timeout: float = 10) -> None:
         """Hace clic en el elemento en la posición especificada."""
         await self.page.locator(self._get_pw_locator(locator)).nth(index).click(timeout=timeout * 1000)
 
-    async def click_element_by_partial_texts(self, locator: BSLocator, partial_containing_texts: list[str],
-                                             partial_non_containing_texts: list[str] = None, 
-                                             timeout: float = 10) -> bool:
+    async def click_by_partial_texts(self, locator: BSLocator, partial_containing_texts: list[str],
+                                     partial_non_containing_texts: list[str] = None,
+                                     timeout: float = 10) -> bool:
         """
         Hace clic en un elemento que contenga ciertos textos y no contenga otros.
         
@@ -327,18 +329,18 @@ class BSCmfx:
         await self.page.locator(self._get_pw_locator(locator)).fill("")
 
     async def clear_input(self, input_elem: Locator, timeout: float = 10):
-        """Limpia un input seleccionando todo y borrando."""
+        """Limpia un input seleccionándolo al completo y borrando."""
         if await input_elem.input_value(timeout=timeout*1000):
             await input_elem.click(click_count=3)
             await self.wait_random(0.1, 0.2)
             await input_elem.press('Backspace')
 
-    async def human_send_keys_and_press_enter(self, locator: BSLocator, content: str, timeout: float = 10):
-        await self.human_send_keys(locator, content, timeout)
-        await self.wait_static(0.075)
+    async def human_type_and_press_enter(self, locator: BSLocator, content: str, timeout: float = 10):
+        await self.human_type(locator, content, timeout)
+        await self.wait(0.075)
         await self.page.locator(self._get_pw_locator(locator)).press('Enter')
 
-    async def human_send_keys(self, locator: BSLocator, content: str, timeout: float = 10) -> None:
+    async def human_type(self, locator: BSLocator, content: str, timeout: float = 10) -> None:
         """
         Envía teclas de forma humanizada (con delays aleatorios).
         
@@ -356,10 +358,10 @@ class BSCmfx:
             await input_element.type(char)
             await self.wait_random(min_delay, max_delay)
 
-    async def clear_and_send_keys(self, locator: BSLocator, value: Any) -> None:
+    async def clear_and_human_type(self, locator: BSLocator, value: Any) -> None:
         """Limpia un input y escribe nuevo contenido de forma humanizada."""
         await self.clear(locator)
-        await self.human_send_keys(locator, str(value))
+        await self.human_type(locator, str(value))
 
     # ========== Métodos de scroll ==========
     

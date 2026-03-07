@@ -16,6 +16,8 @@ from ..base import BSWebPilot
 from bswebpilot.utils.locator import BSLocator
 
 
+# TODO: implementar métodos faltantes y usar timeout
+
 class BSWebDriver(BSWebPilot):
 
     driver: uc.Chrome | None = None
@@ -89,13 +91,25 @@ class BSWebDriver(BSWebPilot):
         return self.driver.find_elements(locator.by, locator.value)
 
     @override
-    def click(self, locator: BSLocator) -> None:
+    def get_elements_count(self, locator: BSLocator, timeout: float = 10) -> int:
+        return len(self.find_elements(locator))
+
+    @override
+    def click(self, locator: BSLocator, timeout: float = 10) -> None:
         self.wait_element_to_be_clickable(locator)
         self.find_element(locator).click()
 
     def click_js(self, locator: BSLocator) -> None:
         self.wait_element_to_be_clickable(locator)
         self.driver.execute_script("arguments[0].click();", self.find_element(locator))
+
+    @override
+    def manual_click_element(self, locator: BSLocator, timeout: float = 10) -> None:
+        pass
+
+    @override
+    def click_nth(self, locator: BSLocator, timeout: float = 10) -> None:
+        pass
 
     @override
     def clear(self, locator: BSLocator):
@@ -135,7 +149,11 @@ class BSWebDriver(BSWebPilot):
             if unsafe_mode: raise e
 
     @override
-    def get_element_attribute(self, locator: BSLocator, attribute: str) -> str:
+    def get_elements_text(self, locator: BSLocator, timeout: float = 10) -> list[str]:
+        pass
+
+    @override
+    def get_attribute_value(self, locator: BSLocator, attribute: str) -> str:
         self.wait_element_to_be_present(locator)
         return self.find_element(locator).get_attribute(attribute).strip()
 
