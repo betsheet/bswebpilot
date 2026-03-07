@@ -3,7 +3,6 @@ import locale
 import re
 import asyncio
 import random
-import subprocess
 from typing import Any
 
 from camoufox.async_api import AsyncCamoufox
@@ -79,9 +78,40 @@ class BSCmfx:
     @staticmethod
     def _get_locale() -> str:
         """Obtiene el locale del sistema."""
+        import os
+
+        # Intentar obtener el locale del sistema
         loc = locale.getlocale()[0] or locale.getdefaultlocale()[0]  # type: ignore[attr-defined]
-        if loc:
+
+        # Validar que sea un locale real (no 'C', 'POSIX', etc.)
+        if loc and loc not in ('C', 'POSIX') and '_' in loc:
             return loc.replace('_', '-')
+
+        # Fallback: intentar obtener desde variables de entorno
+        for env_var in ('LANG', 'LC_ALL', 'LC_MESSAGES'):
+            env_locale = os.environ.get(env_var, '')
+            if env_locale and env_locale not in ('C', 'POSIX', 'C.UTF-8'):
+                lang_part = env_locale.split('.')[0]
+                if '_' in lang_part:
+                    return lang_part.replace('_', '-')
+
+        # Fallback: en macOS, consultar las preferencias del sistema
+        if platform.system() == 'Darwin':
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ['defaults', 'read', '-g', 'AppleLocale'],
+                    capture_output=True, text=True, timeout=2
+                )
+                if result.returncode == 0:
+                    loc = result.stdout.strip()
+                    # Eliminar sufijos como '@rg=eszzzz'
+                    loc = loc.split('@')[0].replace('_', '-')
+                    if loc:
+                        return loc
+            except Exception:
+                pass
+
         return 'en-US'
 
     @staticmethod
