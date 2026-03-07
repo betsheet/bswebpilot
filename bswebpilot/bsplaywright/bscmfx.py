@@ -3,6 +3,7 @@ import locale
 import re
 import asyncio
 import random
+import subprocess
 from typing import Any
 
 from camoufox.async_api import AsyncCamoufox
@@ -19,8 +20,7 @@ class BSCmfx:
     browser: Browser | BrowserContext | None = None
     page: Page | None = None
 
-    def __init__(self, is_headless: bool = False, humanize: bool = True,
-                 screen_resolution: tuple[int, int] | None = None,
+    def __init__(self, is_headless: bool = False, humanize: bool = True, screen_resolution: tuple[int, int] | None = None,
                  **camoufox_config):
         """
         Constructor que almacena la configuración inicial.
@@ -54,33 +54,35 @@ class BSCmfx:
             'humanize': self.humanize,
             **self.camoufox_config
         }
-
+        
         # Creamos la instancia de AsyncCamoufox
         self._camoufox_instance = AsyncCamoufox(**config)
-
+        
         # Entramos en el contexto asíncrono para obtener el browser
         self.browser = await self._camoufox_instance.__aenter__()
-
+        
         # Configuramos el viewport
         page_options = {}
         if config['window'] and len(config['window']) == 2:
             page_options['viewport'] = {
-                'width': config['window'][0],
+                'width': config['window'][0], 
                 'height': config['window'][1]
             }
-
+        
         # Creamos la página
         self.page = await self.browser.new_page(**page_options)
-
+        
         return self
 
     # ========== Métodos auxiliares de configuración ==========
-
+    
     @staticmethod
     def _get_locale() -> str:
         """Obtiene el locale del sistema."""
-       # TODO: 'C' no es válido
-        return locale.getdefaultlocale()[1].replace('_', '-')
+        loc = locale.getlocale()[0] or locale.getdefaultlocale()[0]  # type: ignore[attr-defined]
+        if loc:
+            return loc.replace('_', '-')
+        return 'en-US'
 
     @staticmethod
     def _get_screen_resolution() -> tuple[int, int]:
@@ -92,8 +94,7 @@ class BSCmfx:
         """Detecta el sistema operativo y configura WebGL apropiadamente."""
         os_name = platform.system()
         if os_name == "Windows":
-            return 'windows', ('Google Inc. (NVIDIA)',
-                               'ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar')
+            return 'windows', ('Google Inc. (NVIDIA)', 'ANGLE (NVIDIA, NVIDIA GeForce GTX 980 Direct3D11 vs_5_0 ps_5_0), or similar')
         elif os_name == "Darwin":
             return 'macos', ('Apple', 'Apple M1, or similar')
         elif os_name == "Linux":
@@ -118,7 +119,7 @@ class BSCmfx:
         raise ValueError(f'Tipo de selector no válido: {locator.by}')
 
     # ========== Métodos de navegación ==========
-
+    
     async def navigate_to(self, url: str, timeout: float = 60):
         """
         Navega a la URL especificada.
@@ -127,14 +128,14 @@ class BSCmfx:
             url: URL a la que navegar
             timeout: Timeout en segundos (por defecto 60)
         """
-        await self.page.goto(url, timeout=timeout * 1000)
+        await self.page.goto(url, timeout=timeout*1000)
 
     async def save_screenshot(self, filepath: str):
         """Guarda una captura de pantalla en la ruta especificada."""
         await self.page.screenshot(path=filepath)
 
     # ========== Métodos de espera ==========
-
+    
     @staticmethod
     async def wait_random(_min: float, _max: float) -> None:
         """Espera un tiempo aleatorio entre _min y _max segundos."""
@@ -147,16 +148,15 @@ class BSCmfx:
 
     async def wait_page_to_be_loaded(self, timeout: float = 10) -> None:
         """Espera a que la página esté completamente cargada."""
-        await self.page.wait_for_load_state(timeout=timeout * 1000)
+        await self.page.wait_for_load_state(timeout=timeout*1000)
         await self.wait_random(0.15, 0.3)
 
     # ========== Métodos de verificación de elementos ==========
-    #   TODO: incluir un parámetro booleano opcional a False ("safe_mode" o algo así) por defecto para controlar si se
-    #   eleva excepción cuando se cumple el timeout
+    
     async def is_element_present(self, locator: BSLocator, timeout: float = 10) -> bool:
         """Verifica si un elemento está presente en el DOM."""
         try:
-            await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_attached(timeout=timeout * 1000)
+            await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_attached(timeout=timeout*1000)
             return True
         except AssertionError:
             return False
@@ -164,47 +164,46 @@ class BSCmfx:
     async def is_element_visible(self, locator: BSLocator, timeout: float = 10) -> bool:
         """Verifica si un elemento es visible."""
         try:
-            return await self.page.locator(self.get_pw_locator(locator)).first.is_visible(timeout=timeout * 1000)
+            return await self.page.locator(self.get_pw_locator(locator)).first.is_visible(timeout=timeout*1000)
         except TimeoutError:
             return False
 
     async def is_element_not_present(self, locator: BSLocator, timeout: float = 10) -> bool:
         """Verifica si un elemento NO está presente en el DOM."""
         try:
-            await expect(self.page.locator(self.get_pw_locator(locator))).not_to_be_attached(timeout=timeout * 1000)
+            await expect(self.page.locator(self.get_pw_locator(locator))).not_to_be_attached(timeout=timeout*1000)
             return True
         except AssertionError:
             return False
 
     async def wait_element_to_be_present(self, locator: BSLocator, timeout: float = 10) -> None:
         """Espera a que un elemento esté presente en el DOM."""
-        await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_attached(timeout=timeout * 1000)
+        await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_attached(timeout=timeout*1000)
 
     async def wait_element_to_be_visible(self, locator: BSLocator, timeout: float = 10):
         """Espera a que un elemento sea visible."""
-        await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_visible(timeout=timeout * 1000)
+        await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_visible(timeout=timeout*1000)
 
     async def wait_element_to_be_invisible(self, locator: BSLocator, timeout: float = 10):
         """Espera a que un elemento sea invisible."""
-        await expect(self.page.locator(self.get_pw_locator(locator))).not_to_be_visible(timeout=timeout * 1000)
+        await expect(self.page.locator(self.get_pw_locator(locator))).not_to_be_visible(timeout=timeout*1000)
 
     async def wait_element_to_be_enabled(self, locator: BSLocator, timeout: float = 10) -> None:
         """Espera a que un elemento esté habilitado."""
-        await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_enabled(timeout=timeout * 1000)
+        await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_enabled(timeout=timeout*1000)
 
     async def wait_element_to_have_text(self, locator: BSLocator, text: str, timeout: float = 10) -> None:
         """Espera a que un elemento tenga un texto específico."""
-        await expect(self.page.locator(self.get_pw_locator(locator))).to_have_text(text, timeout=timeout * 1000)
+        await expect(self.page.locator(self.get_pw_locator(locator))).to_have_text(text, timeout=timeout*1000)
 
-    async def verify_attribute_contains(self, locator: BSLocator, attr: str, content: str,
-                                        ignore_case: bool = True, timeout: float = 10) -> None:
+    async def verify_attribute_contains(self, locator: BSLocator, attr: str, content: str, 
+                                       ignore_case: bool = True, timeout: float = 10) -> None:
         """Verifica que un atributo de un elemento contenga cierto contenido."""
         await expect(self.page.locator(self.get_pw_locator(locator))).to_have_attribute(
-            attr, re.compile(rf'.*{content}.*'), ignore_case=ignore_case, timeout=timeout * 1000
+            attr, re.compile(rf'.*{content}.*'), ignore_case=ignore_case, timeout=timeout*1000
         )
 
-    async def check_attribute_is_equals(self, locator: BSLocator, attr: str, content: str, ignore_case: bool = False,
-                                        timeout: float = 10) -> bool:
+    async def check_attribute_is_equals(self, locator: BSLocator, attr: str, content: str, ignore_case: bool = False, timeout: float = 10) -> bool:
         attribute_value: str = await self.get_attribute_value(locator, attr, timeout)
         return attribute_value.lower() == content.lower() if ignore_case else attribute_value == content
 
@@ -212,11 +211,11 @@ class BSCmfx:
         return await self.page.locator(self.get_pw_locator(locator)).get_attribute(attr, timeout=timeout * 1000)
 
     # ========== Métodos de obtención de información ==========
-
+    
     async def get_element_text(self, locator: BSLocator, timeout: float = 10, raise_exception: bool = True):
         """Obtiene el texto de un elemento."""
         try:
-            return await self.page.locator(self.get_pw_locator(locator)).first.inner_text(timeout=timeout * 1000)
+            return await self.page.locator(self.get_pw_locator(locator)).first.inner_text(timeout=timeout*1000)
         except TimeoutError as e:
             if raise_exception:
                 raise e
@@ -227,7 +226,7 @@ class BSCmfx:
         try:
             await self.wait_element_to_be_present(locator, timeout)
             pw_locator: Locator = self.page.locator(self.get_pw_locator(locator))
-            await expect(pw_locator.first).to_be_attached(timeout=timeout * 1000)
+            await expect(pw_locator.first).to_be_attached(timeout=timeout*1000)
         except AssertionError:
             return []
         return await pw_locator.all_inner_texts()
@@ -258,37 +257,17 @@ class BSCmfx:
         await self.wait_random(0.025, 0.125)
         await self.page.mouse.up()
 
-    # TODO: necesito homogeneizar los métodos de click para que funcionen con elementos internos a un iframe.
-    #  Recibirá obligatoriamente el locator del elemento a clickar (absoluto si no está dentro de un frame, relativo al
-    #  frame si sí lo está). Tendrá también un atributo opciones, frame_locator. Si tiene valor distinto a None,
-    #  asumimos que el elemento a clicar está dentro de un iframe
-    async def click_element(self, locator: BSLocator, timeout: float = 10, frame_loc: BSLocator | None = None,
-                            nth: int | None = None) -> None:
+    async def click_element(self, locator: BSLocator, timeout: float = 10) -> None:
         """Hace clic en un elemento."""
-        loc_str: str = self.get_pw_locator(locator)
-        locator: Locator | None
+        await self.page.locator(self.get_pw_locator(locator)).click(timeout=timeout*1000)
 
-        if frame_loc is not None:
-            locator = self.page.frame_locator(self.get_pw_locator(frame_loc)).locator(loc_str)
-        else:
-            locator = self.page.locator(loc_str)
-
-        if nth is not None:
-            locator = locator.nth(nth)
-
-        await locator.click(timeout=timeout * 1000)
-
-    # TODO: si funciona bien el de arriba, borramos éste
-    async def click_nth_element(self, locator: BSLocator, index: int, timeout: float = 10,
-                                frame_loc: BSLocator | None = None) -> None:
+    async def click_nth_element(self, locator: BSLocator, index: int, timeout: float = 10) -> None:
         """Hace clic en el elemento en la posición especificada."""
-        await self.page.locator(self.get_pw_locator(locator)).nth(index).click(timeout=timeout * 1000)
+        await self.page.locator(self.get_pw_locator(locator)).nth(index).click(timeout=timeout*1000)
 
-    # TODO: adaptar a iframes y a nth
-    # TODO: necesito un método para obtener un BSLocator pasándole los mismos argumentos que a click_element_by_partial_texts
     async def click_element_by_partial_texts(self, locator: BSLocator, partial_containing_texts: list[str],
-                                             partial_non_containing_texts: list[str] = None,
-                                             timeout: float = 10, frame_loc: BSLocator | None = None) -> bool:
+                                             partial_non_containing_texts: list[str] = None, 
+                                             timeout: float = 10) -> bool:
         """
         Hace clic en un elemento que contenga ciertos textos y no contenga otros.
         
@@ -297,7 +276,6 @@ class BSCmfx:
             partial_containing_texts: Lista de textos que debe contener
             partial_non_containing_texts: Lista de textos que NO debe contener
             timeout: Timeout en segundos
-            frame_loc: frame
         """
         await self.wait_element_to_be_present(locator, timeout)
         loc_to_click: Locator = self.page.locator(self.get_pw_locator(locator))
@@ -307,20 +285,20 @@ class BSCmfx:
                 loc_to_click = loc_to_click.filter(has_text=pt)
             for pt in partial_non_containing_texts if partial_non_containing_texts is not None else []:
                 loc_to_click = loc_to_click.filter(has_not_text=pt)
-            await loc_to_click.first.click(timeout=timeout * 1000)
+            await loc_to_click.first.click(timeout=timeout*1000)
             return True
         except TimeoutError:
             return False
 
     # ========== Métodos de entrada de texto ==========
-
+    
     async def clear(self, locator: BSLocator) -> None:
         """Limpia el contenido de un input."""
         await self.page.locator(self.get_pw_locator(locator)).fill("")
 
     async def clear_input(self, input_elem: Locator, timeout: float = 10):
         """Limpia un input seleccionando todo y borrando."""
-        if await input_elem.input_value(timeout=timeout * 1000):
+        if await input_elem.input_value(timeout=timeout*1000):
             await input_elem.click(click_count=3)
             await self.wait_random(0.1, 0.2)
             await input_elem.press('Backspace')
@@ -354,7 +332,7 @@ class BSCmfx:
         await self.human_send_keys(locator, str(value))
 
     # ========== Métodos de scroll ==========
-
+    
     async def mouse_wheel_scroll(self, locator: BSLocator, timeout: float = 10) -> None:
         """Hace scroll con la rueda del mouse hasta que el elemento sea visible."""
         element_handle = self.page.locator(self.get_pw_locator(locator))
@@ -367,20 +345,20 @@ class BSCmfx:
         await self.wait_element_to_be_present(locator, timeout=timeout)
         elem_handle = self.get_pw_locator(locator)
         await self.page.evaluate("""
-                                 (element) => {
-                                     const rect = element.getBoundingClientRect();
-                                     const elementCenterY = rect.top + rect.height / 2;
-                                     const viewportCenterY = window.innerHeight / 2;
-                                     window.scrollBy(0, elementCenterY - viewportCenterY);
-                                 }
-                                 """, elem_handle)
+            (element) => {
+                const rect = element.getBoundingClientRect();
+                const elementCenterY = rect.top + rect.height / 2;
+                const viewportCenterY = window.innerHeight / 2;
+                window.scrollBy(0, elementCenterY - viewportCenterY);
+            }
+        """, elem_handle)
+
 
     async def get_current_url(self) -> str:
         """Obtiene la URL actual de la página."""
         return self.page.url
-
     # ========== Métodos de limpieza ==========
-
+    
     async def quit(self):
         """Cierra el navegador y limpia los recursos."""
         if hasattr(self, '_camoufox_instance') and self._camoufox_instance:
@@ -390,7 +368,7 @@ class BSCmfx:
             self.page = None
 
     # ========== Context manager support ==========
-
+    
     async def __aenter__(self):
         """Soporte para async with."""
         await self.initialize()
