@@ -9,14 +9,16 @@ from selenium.common import TimeoutException, NoSuchElementException, ElementCli
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from typing_extensions import override
 from webdriver_manager.chrome import ChromeDriverManager
 
+from ..base import BSWebPilot
 from bswebpilot.utils.locator import BSLocator
 
 
-class BSWebDriver:
-    driver: uc.Chrome
-    options: uc.ChromeOptions
+class BSWebDriver(BSWebPilot):
+    driver: uc.Chrome | None = None
+    options: uc.ChromeOptions | None = None
 
     # Settings
     medium_waiting_time: float = 15.0  # para esperas explícitas
@@ -62,12 +64,9 @@ class BSWebDriver:
         return path
 
     def __init__(self, is_headless: bool = False):
-        self.options = uc.ChromeOptions()
-        self.options.add_argument("--incognito")
-        if is_headless:
-            self.headless()
-        # Descarga el chromedriver correcto para la arquitectura actual
-        # (arm64 en Apple Silicon, x86_64 en Intel).
+        super().__init__(is_headless)
+        self._set_chromedriver_option(is_headless)
+
         driver_path = self._get_driver_path()
         self.driver = uc.Chrome(options=self.options, driver_executable_path=driver_path)
         self.driver.execute_cdp_cmd(
@@ -75,26 +74,42 @@ class BSWebDriver:
                 "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"}
         )
 
+    def _set_chromedriver_option(self, is_headless: bool = False) -> None:
+        self.options = uc.ChromeOptions()
+        self.options.add_argument("--incognito")
+        if is_headless:
+            self.options.add_argument("--headless")
+            """self.driver.execute_cdp_cmd(
+                "Network.setUserAgentOverride", {
+                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"}
+            )"""
+
+    def _build_chromedriver(self) -> None:
+        self.driver = uc.Chrome(options=self.options, driver_executable_path=self._get_driver_path())
+        self.driver.execute_cdp_cmd(
+            "Network.setUserAgentOverride", {
+                "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"}
+        )
+
+    @override
     def quit(self):
         self.driver.quit()
 
     def close_tab(self, window_handle: str):
-        # TODO
-        pass
-
-    def headless(self) -> None:
-        self.options.add_argument("--headless")
-        """self.driver.execute_cdp_cmd(
-            "Network.setUserAgentOverride", {
-                "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"}
-        )"""
+        original_handle: str = self.driver.current_window_handle
+        self.driver.switch_to.window(window_handle)
+        self.driver.close()
+        if original_handle != window_handle and original_handle in self.driver.window_handles:
+            self.driver.switch_to.window(original_handle)
 
     def set_implicit_wait(self, wait_time: float) -> None:
         self.driver.implicitly_wait(wait_time)
 
+    @override
     def navigate_to(self, url: str) -> None:
         self.driver.get(url)
 
+    @override
     def maximize_window(self) -> None:
         self.driver.maximize_window()
 
@@ -102,24 +117,22 @@ class BSWebDriver:
         self.driver.execute_script("window.focus();")
 
     # Elements
-    def find_element(self, locator: BSLocator, retry: bool = False) -> WebElement:
-        try:
-            return self.driver.find_element(locator.by, locator.value)
-        except NoSuchElementException as e:
-            if not retry:
-                raise e
-            return self.find_element(locator, False)
+    def find_element(self, locator: BSLocator) -> WebElement:
+        return self.driver.find_element(locator.by, locator.value)
 
-    def find_elements(self, locator: BSLocator, retry: bool = False):
-        elements: list[WebElement] = self.driver.find_elements(locator.by, locator.value)
-        if not bool(elements) and retry:
-            elements = self.find_elements(locator, False)
-        return elements
+    def find_elements(self, locator: BSLocator) -> list[WebElement]:
+        return self.driver.find_elements(locator.by, locator.value)
 
-    def click_element(self, locator: BSLocator) -> None:
+    @override
+    def click(self, locator: BSLocator) -> None:
         self.wait_element_to_be_clickable(locator)
         self.find_element(locator).click()
 
+    def click_js(self, locator: BSLocator) -> None:
+        self.wait_element_to_be_clickable(locator)
+        self.driver.execute_script("arguments[0].click();", self.find_element(locator))
+
+    @override
     def clear(self, locator: BSLocator):
         self.wait_element_to_be_clickable(locator)
         self.find_element(locator).clear()
@@ -132,6 +145,13 @@ class BSWebDriver:
         self.clear(locator)
         self.send_keys(locator, content)
 
+    def clear_and_human_type(self, locator: BSLocator, content: str):
+        self.wait_random(self.min_human_typing_wait, self.max_human_typing_wait)
+        self.clear(locator)
+        self.wait_random(self.min_human_typing_wait, self.max_human_typing_wait)
+        self.human_type(locator, content)
+
+    @override
     def human_type(self, locator: BSLocator, content: str):
         self.wait_element_to_be_clickable(locator)
         elem = self.find_element(locator)
@@ -140,31 +160,25 @@ class BSWebDriver:
             elem.send_keys(char)
             time.sleep(random.uniform(self.min_human_typing_wait, self.max_human_typing_wait))
 
-    def clear_and_human_type(self, locator: BSLocator, content: str):
-        self.wait_random(self.min_human_typing_wait, self.max_human_typing_wait)
-        self.clear(locator)
-        self.wait_random(self.min_human_typing_wait, self.max_human_typing_wait)
-        self.human_type(locator, content)
 
-    def get_text(self, locator: BSLocator, raise_exception: bool = False, timeout=10) -> str:
-        self.wait_element_to_be_visible(locator, raise_exception, timeout)
+    @override
+    def get_element_text(self, locator: BSLocator, unsafe_mode: bool = True, timeout=10) -> str | None:
+        self.wait_element_to_be_visible(locator, unsafe_mode, timeout)
         try:
             return self.find_element(locator).text
         except TimeoutException as e:
-            if raise_exception: raise e
+            if unsafe_mode: raise e
 
-    def get_class(self, locator: BSLocator) -> str:
+    @override
+    def get_element_attribute(self, locator: BSLocator, attribute: str) -> str:
         self.wait_element_to_be_present(locator)
-        return self.find_element(locator).get_attribute("class").strip()
-
-    def get_value(self, locator: BSLocator) -> str:
-        self.wait_element_to_be_present(locator)
-        return self.find_element(locator).get_attribute("value").strip()
+        return self.find_element(locator).get_attribute(attribute).strip()
 
     # Presence of elements
-    def is_element_present(self, locator: BSLocator, tolerance_time: float = 10):
+    @override
+    def is_element_present(self, locator: BSLocator, timeout: float = 10):
         try:
-            WebDriverWait(self.driver, tolerance_time).until(EC.presence_of_element_located(locator.as_tuple()))
+            WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located(locator.as_tuple()))
             return True
         except TimeoutException:
             return False
@@ -202,7 +216,8 @@ class BSWebDriver:
                 raise e
                 # TODO: replicar esto en todos los waits que lanzan excepción.
 
-    def wait_element_to_be_invisible(self, locator: BSLocator, raise_exception: bool = False, tolerance_time: float = 10):
+    def wait_element_to_be_invisible(self, locator: BSLocator, raise_exception: bool = False,
+                                     tolerance_time: float = 10):
         try:
             WebDriverWait(self.driver, tolerance_time).until(EC.invisibility_of_element_located(locator.as_tuple()))
         except TimeoutException as e:
@@ -216,12 +231,14 @@ class BSWebDriver:
         WebDriverWait(self.driver, max_time).until(
             lambda d: content in self.find_element(locator).get_attribute("class"))
 
-    def wait_attribute_to_contain(self, locator: BSLocator, attr: str, content: str, tolerance_time: float = 10, raise_exception: bool = False):
+    def wait_attribute_to_contain(self, locator: BSLocator, attr: str, content: str, tolerance_time: float = 10,
+                                  raise_exception: bool = False):
         try:
             WebDriverWait(self.driver, tolerance_time).until(
                 lambda d: content in self.find_element(locator).get_attribute(attr))
         except Exception as e:
             if raise_exception: raise e
+
     # Aux
     def get_current_url(self) -> str:
         return self.driver.current_url

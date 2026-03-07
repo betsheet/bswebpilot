@@ -152,12 +152,12 @@ class TestBSWebDriverElements:
     def test_is_element_present_true(self, driver: BSWebDriver):
         """is_element_present() → True para un elemento que existe en el DOM."""
         driver.navigate_to(TEST_URL)
-        assert driver.is_element_present(LOC_H1, tolerance_time=10) is True
+        assert driver.is_element_present(LOC_H1, timeout=10) is True
 
     def test_is_element_present_false(self, driver: BSWebDriver):
         """is_element_present() → False para un elemento que NO existe."""
         driver.navigate_to(TEST_URL)
-        assert driver.is_element_present(LOC_MISSING, tolerance_time=3) is False
+        assert driver.is_element_present(LOC_MISSING, timeout=3) is False
 
     def test_is_element_displayed_true(self, driver: BSWebDriver):
         """is_element_displayed() → True para el <h1> de example.com."""
@@ -192,14 +192,14 @@ class TestBSWebDriverElements:
     def test_get_text_h1(self, driver: BSWebDriver):
         """get_text() devuelve el texto del <h1> de example.com."""
         driver.navigate_to(TEST_URL)
-        text = driver.get_text(LOC_H1)
+        text = driver.get_element_text(LOC_H1)
         assert isinstance(text, str)
         assert len(text) > 0
 
     def test_get_text_xpath(self, driver: BSWebDriver):
         """get_text() funciona también con locators XPath."""
         driver.navigate_to(TEST_URL)
-        text = driver.get_text(LOC_H1_XPATH)
+        text = driver.get_element_text(LOC_H1_XPATH)
         assert isinstance(text, str)
         assert len(text) > 0
 
