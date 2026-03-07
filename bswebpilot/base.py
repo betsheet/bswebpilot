@@ -12,6 +12,7 @@ class BSWebPilot(ABC):
         self.is_headless = is_headless
         self.window_resolution = window_resolution
 
+   # TODO: estos deberían ser los únicos métodos que se usaran desde los bots/scrappers
 
     @abstractmethod
     def initialize(self) -> None:
@@ -27,6 +28,10 @@ class BSWebPilot(ABC):
 
     @abstractmethod
     def navigate_to(self, url: str) -> None:
+        pass
+
+    @abstractmethod
+    def get_current_url(self) -> str:
         pass
 
     @abstractmethod
@@ -54,15 +59,28 @@ class BSWebPilot(ABC):
         pass
 
     @abstractmethod
-    def is_element_present(self, locator: BSLocator, timeout: float = 10):
+    def is_element_present(self, locator: BSLocator, timeout: float = 10) -> bool:
         pass
 
-    def is_element_visible(self, locator: BSLocator, timeout: float = 10):
+    @abstractmethod
+    def is_element_not_present(self, locator: BSLocator, timeout: float = 10) -> bool:
+        pass
+
+    @abstractmethod
+    def is_element_visible(self, locator: BSLocator, timeout: float = 10) -> bool:
         pass
 
     @abstractmethod
     def wait_element_to_be_present(self, locator: BSLocator, timeout: float = 10):
         pass
+        pass
+
+    @abstractmethod
+    def wait_page_to_be_loaded(self, timeout: float = 10) -> None:
+        pass
+
+    @abstractmethod
+    def scroll_element_into_view(self, locator: BSLocator, timeout: float = 10) -> None:
         pass
 
     @staticmethod

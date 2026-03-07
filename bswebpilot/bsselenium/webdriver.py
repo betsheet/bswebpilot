@@ -17,7 +17,6 @@ from bswebpilot.utils.locator import BSLocator
 
 
 class BSWebDriver(BSWebPilot):
-    pass
 
     driver: uc.Chrome | None = None
     options: uc.ChromeOptions | None = None
@@ -149,7 +148,10 @@ class BSWebDriver(BSWebPilot):
         except TimeoutException:
             return False
 
-    def is_element_displayed(self, locator: BSLocator, tolerance_time: float = 10):
+    def is_element_not_present(self, locator: BSLocator, timeout: float = 10) -> bool:
+        pass
+
+    def is_element_visible(self, locator: BSLocator, tolerance_time: float = 10):
         return self.is_element_present(locator, tolerance_time) and self.find_element(locator).is_displayed()
 
     def is_element_clickable(self, locator: BSLocator, tolerance_time: float = 10):
@@ -210,7 +212,8 @@ class BSWebDriver(BSWebPilot):
     def get_current_url(self) -> str:
         return self.driver.current_url
 
-    def scroll_element_into_view(self, element_locator: BSLocator):
+    def scroll_element_into_view(self, element_locator: BSLocator, timeout: float = 10) -> None:
+        # TODO: no estamos haciendo nada con el timeout
         element: WebElement = self.find_element(element_locator)
         self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", element)
 

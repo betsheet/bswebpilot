@@ -44,18 +44,18 @@ class TestBSCmfxUnit:
     def test_get_pw_locator_css(self):
         """Un selector CSS se devuelve tal cual."""
         loc = BSLocator.css("#mi-id > span.clase")
-        assert BSCmfx.get_pw_locator(loc) == "#mi-id > span.clase"
+        assert BSCmfx._get_pw_locator(loc) == "#mi-id > span.clase"
 
     def test_get_pw_locator_xpath(self):
         """Un XPath se devuelve con el prefijo 'xpath='."""
         loc = BSLocator.xpath('//div[@id="contenedor"]')
-        assert BSCmfx.get_pw_locator(loc) == 'xpath=//div[@id="contenedor"]'
+        assert BSCmfx._get_pw_locator(loc) == 'xpath=//div[@id="contenedor"]'
 
     def test_get_pw_locator_invalid_raises_value_error(self):
         """Un tipo de locator no soportado (p. ej. 'id') debe lanzar ValueError."""
         loc = BSLocator(By.ID, "mi-id")
         with pytest.raises(ValueError):
-            BSCmfx.get_pw_locator(loc)
+            BSCmfx._get_pw_locator(loc)
 
     # --- _get_locale ---
 

@@ -162,12 +162,12 @@ class TestBSWebDriverElements:
     def test_is_element_displayed_true(self, driver: BSWebDriver):
         """is_element_displayed() → True para el <h1> de example.com."""
         driver.navigate_to(TEST_URL)
-        assert driver.is_element_displayed(LOC_H1, tolerance_time=10) is True
+        assert driver.is_element_visible(LOC_H1, tolerance_time=10) is True
 
     def test_is_element_displayed_false(self, driver: BSWebDriver):
         """is_element_displayed() → False para un elemento que NO existe."""
         driver.navigate_to(TEST_URL)
-        assert driver.is_element_displayed(LOC_MISSING, tolerance_time=3) is False
+        assert driver.is_element_visible(LOC_MISSING, tolerance_time=3) is False
 
     def test_is_element_clickable_true(self, driver: BSWebDriver):
         """is_element_clickable() → True para el enlace de example.com."""

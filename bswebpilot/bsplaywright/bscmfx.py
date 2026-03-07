@@ -132,7 +132,7 @@ class BSCmfx:
         raise Exception(f"Sistema operativo no válido detectado: {os_name}")
 
     @staticmethod
-    def get_pw_locator(locator: BSLocator) -> str:
+    def _get_pw_locator(locator: BSLocator) -> str:
         """
         Convierte un BSLocator al formato de Playwright.
         
@@ -186,7 +186,7 @@ class BSCmfx:
     async def is_element_present(self, locator: BSLocator, timeout: float = 10) -> bool:
         """Verifica si un elemento está presente en el DOM."""
         try:
-            await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_attached(timeout=timeout*1000)
+            await expect(self.page.locator(self._get_pw_locator(locator)).first).to_be_attached(timeout=timeout * 1000)
             return True
         except AssertionError:
             return False
@@ -194,42 +194,42 @@ class BSCmfx:
     async def is_element_visible(self, locator: BSLocator, timeout: float = 10) -> bool:
         """Verifica si un elemento es visible."""
         try:
-            return await self.page.locator(self.get_pw_locator(locator)).first.is_visible(timeout=timeout*1000)
+            return await self.page.locator(self._get_pw_locator(locator)).first.is_visible(timeout=timeout * 1000)
         except TimeoutError:
             return False
 
     async def is_element_not_present(self, locator: BSLocator, timeout: float = 10) -> bool:
         """Verifica si un elemento NO está presente en el DOM."""
         try:
-            await expect(self.page.locator(self.get_pw_locator(locator))).not_to_be_attached(timeout=timeout*1000)
+            await expect(self.page.locator(self._get_pw_locator(locator))).not_to_be_attached(timeout=timeout * 1000)
             return True
         except AssertionError:
             return False
 
     async def wait_element_to_be_present(self, locator: BSLocator, timeout: float = 10) -> None:
         """Espera a que un elemento esté presente en el DOM."""
-        await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_attached(timeout=timeout*1000)
+        await expect(self.page.locator(self._get_pw_locator(locator)).first).to_be_attached(timeout=timeout * 1000)
 
     async def wait_element_to_be_visible(self, locator: BSLocator, timeout: float = 10):
         """Espera a que un elemento sea visible."""
-        await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_visible(timeout=timeout*1000)
+        await expect(self.page.locator(self._get_pw_locator(locator)).first).to_be_visible(timeout=timeout * 1000)
 
     async def wait_element_to_be_invisible(self, locator: BSLocator, timeout: float = 10):
         """Espera a que un elemento sea invisible."""
-        await expect(self.page.locator(self.get_pw_locator(locator))).not_to_be_visible(timeout=timeout*1000)
+        await expect(self.page.locator(self._get_pw_locator(locator))).not_to_be_visible(timeout=timeout * 1000)
 
     async def wait_element_to_be_enabled(self, locator: BSLocator, timeout: float = 10) -> None:
         """Espera a que un elemento esté habilitado."""
-        await expect(self.page.locator(self.get_pw_locator(locator)).first).to_be_enabled(timeout=timeout*1000)
+        await expect(self.page.locator(self._get_pw_locator(locator)).first).to_be_enabled(timeout=timeout * 1000)
 
     async def wait_element_to_have_text(self, locator: BSLocator, text: str, timeout: float = 10) -> None:
         """Espera a que un elemento tenga un texto específico."""
-        await expect(self.page.locator(self.get_pw_locator(locator))).to_have_text(text, timeout=timeout*1000)
+        await expect(self.page.locator(self._get_pw_locator(locator))).to_have_text(text, timeout=timeout * 1000)
 
     async def verify_attribute_contains(self, locator: BSLocator, attr: str, content: str, 
                                        ignore_case: bool = True, timeout: float = 10) -> None:
         """Verifica que un atributo de un elemento contenga cierto contenido."""
-        await expect(self.page.locator(self.get_pw_locator(locator))).to_have_attribute(
+        await expect(self.page.locator(self._get_pw_locator(locator))).to_have_attribute(
             attr, re.compile(rf'.*{content}.*'), ignore_case=ignore_case, timeout=timeout*1000
         )
 
@@ -238,14 +238,14 @@ class BSCmfx:
         return attribute_value.lower() == content.lower() if ignore_case else attribute_value == content
 
     async def get_attribute_value(self, locator: BSLocator, attr: str, timeout: float = 10) -> str | None:
-        return await self.page.locator(self.get_pw_locator(locator)).get_attribute(attr, timeout=timeout * 1000)
+        return await self.page.locator(self._get_pw_locator(locator)).get_attribute(attr, timeout=timeout * 1000)
 
     # ========== Métodos de obtención de información ==========
     
     async def get_element_text(self, locator: BSLocator, timeout: float = 10, raise_exception: bool = True):
         """Obtiene el texto de un elemento."""
         try:
-            return await self.page.locator(self.get_pw_locator(locator)).first.inner_text(timeout=timeout*1000)
+            return await self.page.locator(self._get_pw_locator(locator)).first.inner_text(timeout=timeout * 1000)
         except TimeoutError as e:
             if raise_exception:
                 raise e
@@ -255,7 +255,7 @@ class BSCmfx:
         """Obtiene el texto de todos los elementos que coinciden con el locator."""
         try:
             await self.wait_element_to_be_present(locator, timeout)
-            pw_locator: Locator = self.page.locator(self.get_pw_locator(locator))
+            pw_locator: Locator = self.page.locator(self._get_pw_locator(locator))
             await expect(pw_locator.first).to_be_attached(timeout=timeout*1000)
         except AssertionError:
             return []
@@ -263,7 +263,7 @@ class BSCmfx:
 
     async def get_elements_count(self, locator: BSLocator, timeout: float = 10) -> int:
         """Obtiene el número de elementos que coinciden con el locator."""
-        pw_loc: Locator = self.page.locator(self.get_pw_locator(locator))
+        pw_loc: Locator = self.page.locator(self._get_pw_locator(locator))
         try:
             await pw_loc.first.wait_for(state='attached', timeout=timeout * 1000)
             return await pw_loc.count()
@@ -272,7 +272,7 @@ class BSCmfx:
 
     # ========== Métodos de interacción con elementos ==========
     async def manual_click_element(self, locator: BSLocator, timeout: float = 10) -> None:
-        locator: Locator = self.page.locator(self.get_pw_locator(locator))
+        locator: Locator = self.page.locator(self._get_pw_locator(locator))
         await locator.wait_for(state='visible', timeout=timeout * 1000)
         await locator.hover()
         await self.wait_random(0.1, 0.2)
@@ -289,11 +289,11 @@ class BSCmfx:
 
     async def click_element(self, locator: BSLocator, timeout: float = 10) -> None:
         """Hace clic en un elemento."""
-        await self.page.locator(self.get_pw_locator(locator)).click(timeout=timeout*1000)
+        await self.page.locator(self._get_pw_locator(locator)).click(timeout=timeout * 1000)
 
     async def click_nth_element(self, locator: BSLocator, index: int, timeout: float = 10) -> None:
         """Hace clic en el elemento en la posición especificada."""
-        await self.page.locator(self.get_pw_locator(locator)).nth(index).click(timeout=timeout*1000)
+        await self.page.locator(self._get_pw_locator(locator)).nth(index).click(timeout=timeout * 1000)
 
     async def click_element_by_partial_texts(self, locator: BSLocator, partial_containing_texts: list[str],
                                              partial_non_containing_texts: list[str] = None, 
@@ -308,7 +308,7 @@ class BSCmfx:
             timeout: Timeout en segundos
         """
         await self.wait_element_to_be_present(locator, timeout)
-        loc_to_click: Locator = self.page.locator(self.get_pw_locator(locator))
+        loc_to_click: Locator = self.page.locator(self._get_pw_locator(locator))
 
         try:
             for pt in partial_containing_texts:
@@ -324,7 +324,7 @@ class BSCmfx:
     
     async def clear(self, locator: BSLocator) -> None:
         """Limpia el contenido de un input."""
-        await self.page.locator(self.get_pw_locator(locator)).fill("")
+        await self.page.locator(self._get_pw_locator(locator)).fill("")
 
     async def clear_input(self, input_elem: Locator, timeout: float = 10):
         """Limpia un input seleccionando todo y borrando."""
@@ -336,7 +336,7 @@ class BSCmfx:
     async def human_send_keys_and_press_enter(self, locator: BSLocator, content: str, timeout: float = 10):
         await self.human_send_keys(locator, content, timeout)
         await self.wait_static(0.075)
-        await self.page.locator(self.get_pw_locator(locator)).press('Enter')
+        await self.page.locator(self._get_pw_locator(locator)).press('Enter')
 
     async def human_send_keys(self, locator: BSLocator, content: str, timeout: float = 10) -> None:
         """
@@ -349,7 +349,7 @@ class BSCmfx:
         """
         min_delay: float = 0.0187
         max_delay: float = 0.123
-        input_element: Locator = self.page.locator(self.get_pw_locator(locator))
+        input_element: Locator = self.page.locator(self._get_pw_locator(locator))
         await input_element.focus()
         await self.clear_input(input_element, timeout)
         for char in content:
@@ -365,15 +365,15 @@ class BSCmfx:
     
     async def mouse_wheel_scroll(self, locator: BSLocator, timeout: float = 10) -> None:
         """Hace scroll con la rueda del mouse hasta que el elemento sea visible."""
-        element_handle = self.page.locator(self.get_pw_locator(locator))
+        element_handle = self.page.locator(self._get_pw_locator(locator))
         elem_top_pos = await element_handle.evaluate("el => el.offsetTop")
         current_scroll = await self.page.evaluate("() => window.scrollY")
         await self.page.mouse.wheel(0, elem_top_pos - current_scroll)
         await self.wait_element_to_be_visible(locator, timeout)
 
-    async def scroll_into_view(self, locator: BSLocator, timeout: float = 10) -> None:
+    async def scroll_element_into_view(self, locator: BSLocator, timeout: float = 10) -> None:
         await self.wait_element_to_be_present(locator, timeout=timeout)
-        elem_handle = self.get_pw_locator(locator)
+        elem_handle = self._get_pw_locator(locator)
         await self.page.evaluate("""
             (element) => {
                 const rect = element.getBoundingClientRect();
