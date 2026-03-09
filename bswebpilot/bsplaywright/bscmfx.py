@@ -10,6 +10,7 @@ from playwright.async_api import Browser, BrowserContext, Page, Locator, Timeout
 from bswebpilot.base import BSWebPilotAsync
 from bswebpilot.utils.locator import BSLocator
 
+# TODO: tendríamos que tener una versión síncrona de BSCmfx
 
 class BSCmfx(BSWebPilotAsync):
     """

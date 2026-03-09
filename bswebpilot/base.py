@@ -169,7 +169,8 @@ class BSWebPilotAsync(ABC):
         pass
 
     @abstractmethod
-    async def get_element_text(self, locator: BSLocator, timeout: float = 10, raise_exception: bool = True) -> str | None:
+    async def get_element_text(self, locator: BSLocator, timeout: float = 10,
+                               raise_exception: bool = True) -> str | None:
         pass
 
     @abstractmethod
@@ -239,4 +240,3 @@ class BSWebPilotAsync(ABC):
     def __del__(self) -> None:
         """Último recurso de limpieza. Usar quit() o el context manager explícitamente."""
         pass
-

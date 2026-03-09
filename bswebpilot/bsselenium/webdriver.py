@@ -19,7 +19,6 @@ from bswebpilot.utils.locator import BSLocator
 # TODO: implementar métodos faltantes y usar timeout
 
 class BSWebDriverSync(BSWebPilotSync):
-
     driver: uc.Chrome | None = None
     options: uc.ChromeOptions | None = None
 
@@ -33,7 +32,6 @@ class BSWebDriverSync(BSWebPilotSync):
         super().__init__(is_headless, window_resolution)
         self._set_chromedriver_option(is_headless)
         self._build_chromedriver(window_resolution)
-
 
     def _set_chromedriver_option(self, is_headless: bool = False) -> None:
         self.options = uc.ChromeOptions()
@@ -138,7 +136,6 @@ class BSWebDriverSync(BSWebPilotSync):
         for char in str(content):
             elem.send_keys(char)
             time.sleep(random.uniform(self.min_human_typing_wait, self.max_human_typing_wait))
-
 
     @override
     def get_element_text(self, locator: BSLocator, unsafe_mode: bool = True, timeout=10) -> str | None:
@@ -247,8 +244,6 @@ class BSWebDriverSync(BSWebPilotSync):
 
     def save_element_screenshot(self, element_locator: BSLocator, file_path: str = "screenshot.png"):
         self.find_element(element_locator).screenshot(file_path)
-
-
 
     @staticmethod
     def _codesign_if_macos(path: str) -> None:
