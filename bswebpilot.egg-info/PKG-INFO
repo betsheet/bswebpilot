@@ -20,7 +20,10 @@ Description-Content-Type: text/markdown
 Requires-Dist: camoufox>=0.1.0
 Requires-Dist: playwright>=1.40.0
 Requires-Dist: selenium>=4.0.0
+Requires-Dist: setuptools>=70.0.0
 Requires-Dist: undetected-chromedriver>=3.0.0
+Requires-Dist: webdriver-manager>=4.0.0
+Requires-Dist: bsutils @ git+https://github.com/betsheet/bsutils.git
 Provides-Extra: dev
 Requires-Dist: pytest>=7.0.0; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.21.0; extra == "dev"

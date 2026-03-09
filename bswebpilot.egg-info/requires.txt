@@ -1,7 +1,10 @@
 camoufox>=0.1.0
 playwright>=1.40.0
 selenium>=4.0.0
+setuptools>=70.0.0
 undetected-chromedriver>=3.0.0
+webdriver-manager>=4.0.0
+bsutils @ git+https://github.com/betsheet/bsutils.git
 
 [dev]
 pytest>=7.0.0

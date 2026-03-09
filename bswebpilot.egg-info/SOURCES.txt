@@ -1,5 +1,6 @@
 pyproject.toml
 bswebpilot/__init__.py
+bswebpilot/base.py
 bswebpilot.egg-info/PKG-INFO
 bswebpilot.egg-info/SOURCES.txt
 bswebpilot.egg-info/dependency_links.txt
@@ -11,4 +12,6 @@ bswebpilot/bsselenium/__init__.py
 bswebpilot/bsselenium/webdriver.py
 bswebpilot/utils/__init__.py
 bswebpilot/utils/locator.py
+bswebpilot/utils/page.py
 tests/test_bscmfx.py
+tests/test_bswebdriver.py

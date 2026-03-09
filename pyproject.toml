@@ -30,6 +30,7 @@ dependencies = [
     "setuptools>=70.0.0",
     "undetected-chromedriver>=3.0.0",
     "webdriver-manager>=4.0.0",
+    "bsutils @ git+https://github.com/betsheet/bsutils.git",
 ]
 
 [project.optional-dependencies]
