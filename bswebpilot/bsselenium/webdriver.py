@@ -30,18 +30,14 @@ class BSWebDriverSync(BSWebPilotSync):
 
     def __init__(self, is_headless: bool = False, window_resolution: tuple[int, int] | None = None):
         super().__init__(is_headless, window_resolution)
-        self._set_chromedriver_option(is_headless)
-        self._build_chromedriver(window_resolution)
+        self._is_headless = is_headless
+        self._window_resolution = window_resolution
 
     def _set_chromedriver_option(self, is_headless: bool = False) -> None:
         self.options = uc.ChromeOptions()
         self.options.add_argument("--incognito")
         if is_headless:
             self.options.add_argument("--headless")
-            """self.driver.execute_cdp_cmd(
-                "Network.setUserAgentOverride", {
-                    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36"}
-            )"""
 
     def _build_chromedriver(self, window_resolution: tuple[int, int] | None = None) -> None:
         self.driver = uc.Chrome(options=self.options, driver_executable_path=self._get_driver_path())
@@ -54,7 +50,9 @@ class BSWebDriverSync(BSWebPilotSync):
 
     @override
     def initialize(self) -> None:
-        pass
+        """Inicializa las opciones de Chrome y construye el ChromeDriver."""
+        self._set_chromedriver_option(self._is_headless)
+        self._build_chromedriver(self._window_resolution)
 
     @override
     def quit(self):
@@ -238,6 +236,9 @@ class BSWebDriverSync(BSWebPilotSync):
     def execute_script(self, script: str) -> None:
         self.driver.execute_script(script)
 
+    def switch_to_iframe(self, iframe_locator: BSLocator) -> None:
+        self.driver.switch_to.frame(self.driver.find_element(iframe_locator.value))
+
     @override
     def save_screenshot(self, file_path: str = "screenshot.png"):
         self.driver.save_screenshot(file_path)
@@ -281,3 +282,5 @@ class BSWebDriverSync(BSWebPilotSync):
         path = manager.install()
         BSWebDriverSync._codesign_if_macos(path)
         return path
+
+
