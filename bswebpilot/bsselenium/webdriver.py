@@ -280,6 +280,13 @@ class BSWebDriverSync(BSWebPilotSync):
             EC.frame_to_be_available_and_switch_to_it(iframe_locator.as_tuple())
         )
 
+    def switch_to_nested_frame(self, *iframe_locators: BSLocator) -> None:
+        """Navega a través de iframes anidados en el orden indicado."""
+        for locator in iframe_locators:
+            WebDriverWait(self.driver, 10).until(
+                EC.frame_to_be_available_and_switch_to_it(locator.as_tuple())
+            )
+
     def switch_to_default_content(self) -> None:
         self.driver.switch_to.default_content()
 
@@ -294,15 +301,21 @@ class BSWebDriverSync(BSWebPilotSync):
     @staticmethod
     def _codesign_if_macos(path: str) -> None:
         """
-        En macOS, aplica una firma ad-hoc al binario indicado para que
-        Gatekeeper permita su ejecución sin intervención del usuario.
-        Es equivalente a: codesign --force --sign - <path>
+        En macOS, elimina atributos extendidos (como com.apple.provenance)
+        y aplica una firma ad-hoc al binario indicado para que Gatekeeper
+        permita su ejecución sin intervención del usuario.
         """
         if sys.platform != "darwin":
             return
         try:
+            # Eliminar atributos extendidos que provocan SIGKILL (-9)
             subprocess.run(
-                ["codesign", "--force", "--sign", "-", path],
+                ["xattr", "-cr", path],
+                check=False,
+                capture_output=True,
+            )
+            subprocess.run(
+                ["codesign", "--force", "--deep", "--sign", "-", path],
                 check=True,
                 capture_output=True,
             )
