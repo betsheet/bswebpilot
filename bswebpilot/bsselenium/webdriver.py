@@ -97,9 +97,11 @@ class BSWebDriverSync(BSWebPilotSync):
         self.driver.execute_script("window.focus();")
 
     # Elements
+    # TODO: implementar timeout
     def find_element(self, locator: BSLocator) -> WebElement:
         return self.driver.find_element(locator.by, locator.value)
 
+    # TODO: implementar timeout
     def find_elements(self, locator: BSLocator) -> list[WebElement]:
         return self.driver.find_elements(locator.by, locator.value)
 
@@ -118,8 +120,8 @@ class BSWebDriverSync(BSWebPilotSync):
         self.driver.execute_script("arguments[0].click();", self.find_element(locator))
 
     @override
-    def click_nth(self, locator: BSLocator, timeout: float = 10) -> None:
-        raise NotImplementedError
+    def click_nth(self, locator: BSLocator, index: int, timeout: float = 10) -> None:
+        self.find_elements(locator)[index].click()
 
     @override
     def manual_click_element(self, locator: BSLocator, timeout: float = 10) -> None:

@@ -37,7 +37,7 @@ class BSWebPilotSync(ABC):
         pass
 
     @abstractmethod
-    def click_nth(self, locator: BSLocator, timeout: float = 10) -> None:
+    def click_nth(self, locator: BSLocator, index: int, timeout: float = 10) -> None:
         pass
 
     @abstractmethod
