@@ -5,10 +5,12 @@ import sys
 import time
 
 import undetected_chromedriver as uc  # TODO: mirar v2 https://pypi.org/project/undetected-chromedriver/2.1.1/
-from selenium.common import TimeoutException, NoSuchElementException, ElementClickInterceptedException
+from selenium.common import TimeoutException, ElementClickInterceptedException
+from selenium.webdriver.common.by import By
 from selenium.webdriver.remote.webelement import WebElement
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from typing import cast
 from typing_extensions import override
 from webdriver_manager.chrome import ChromeDriverManager
 
@@ -32,6 +34,21 @@ class BSWebDriverSync(BSWebPilotSync):
         super().__init__(is_headless, window_resolution)
         self._is_headless = is_headless
         self._window_resolution = window_resolution
+
+    def __enter__(self) -> "BSWebDriverSync":
+        self.initialize()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        self.quit()
+
+    def __del__(self) -> None:
+        """Último recurso de limpieza. Usar quit() o el context manager explícitamente."""
+        if self.driver is not None:
+            try:
+                self.driver.quit()
+            except Exception:
+                pass
 
     def _set_chromedriver_option(self, is_headless: bool = False) -> None:
         self.options = uc.ChromeOptions()
@@ -95,17 +112,18 @@ class BSWebDriverSync(BSWebPilotSync):
         self.wait_element_to_be_clickable(locator)
         self.find_element(locator).click()
 
+    @override
     def click_js(self, locator: BSLocator) -> None:
         self.wait_element_to_be_clickable(locator)
         self.driver.execute_script("arguments[0].click();", self.find_element(locator))
 
     @override
-    def manual_click_element(self, locator: BSLocator, timeout: float = 10) -> None:
-        pass
+    def click_nth(self, locator: BSLocator, timeout: float = 10) -> None:
+        raise NotImplementedError
 
     @override
-    def click_nth(self, locator: BSLocator, timeout: float = 10) -> None:
-        pass
+    def manual_click_element(self, locator: BSLocator, timeout: float = 10) -> None:
+        raise NotImplementedError
 
     @override
     def clear(self, locator: BSLocator):
@@ -120,6 +138,7 @@ class BSWebDriverSync(BSWebPilotSync):
         self.clear(locator)
         self.send_keys(locator, content)
 
+    @override
     def clear_and_human_type(self, locator: BSLocator, content: str):
         self.wait_random(self.min_human_typing_wait, self.max_human_typing_wait)
         self.clear(locator)
@@ -137,7 +156,7 @@ class BSWebDriverSync(BSWebPilotSync):
 
     @override
     def get_element_text(self, locator: BSLocator, unsafe_mode: bool = True, timeout=10) -> str | None:
-        self.wait_element_to_be_visible(locator, unsafe_mode, timeout)
+        self.wait_element_to_be_visible(locator, timeout, unsafe_mode)
         try:
             return self.find_element(locator).text
         except TimeoutException as e:
@@ -145,7 +164,7 @@ class BSWebDriverSync(BSWebPilotSync):
 
     @override
     def get_elements_text(self, locator: BSLocator, timeout: float = 10) -> list[str]:
-        pass
+        raise NotImplementedError
 
     @override
     def get_attribute_value(self, locator: BSLocator, attribute: str) -> str:
@@ -161,15 +180,17 @@ class BSWebDriverSync(BSWebPilotSync):
         except TimeoutException:
             return False
 
+    @override
     def is_element_not_present(self, locator: BSLocator, timeout: float = 10) -> bool:
-        pass
+        return not self.is_element_present(locator, timeout)
 
-    def is_element_visible(self, locator: BSLocator, tolerance_time: float = 10):
-        return self.is_element_present(locator, tolerance_time) and self.find_element(locator).is_displayed()
+    @override
+    def is_element_visible(self, locator: BSLocator, timeout: float = 10):
+        return self.is_element_present(locator, timeout) and self.find_element(locator).is_displayed()
 
-    def is_element_clickable(self, locator: BSLocator, tolerance_time: float = 10):
+    def is_element_clickable(self, locator: BSLocator, timeout: float = 10):
         try:
-            WebDriverWait(self.driver, tolerance_time).until(EC.element_to_be_clickable(locator.as_tuple()))
+            WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable(locator.as_tuple()))
             return True
         except TimeoutException:
             return False
@@ -182,26 +203,26 @@ class BSWebDriverSync(BSWebPilotSync):
     def wait_element_to_be_present(self, locator: BSLocator, timeout: float = 10):
         WebDriverWait(self.driver, timeout).until(EC.presence_of_element_located(locator.as_tuple()))
 
-    def wait_element_to_be_clickable(self, locator: BSLocator, tolerance_time: float = 10,
+    def wait_element_to_be_clickable(self, locator: BSLocator, timeout: float = 10,
                                      raise_exception: bool = True):
         try:
-            WebDriverWait(self.driver, tolerance_time).until(EC.element_to_be_clickable(locator.as_tuple()))
+            WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable(locator.as_tuple()))
         except TimeoutException as e:
             if raise_exception:
                 raise e
 
-    def wait_element_to_be_visible(self, locator: BSLocator, raise_exception: bool = True, tolerance_time: float = 10):
+    def wait_element_to_be_visible(self, locator: BSLocator, timeout: float = 10, raise_exception: bool = True):
         try:
-            WebDriverWait(self.driver, tolerance_time).until(EC.visibility_of_element_located(locator.as_tuple()))
+            WebDriverWait(self.driver, timeout).until(EC.visibility_of_element_located(locator.as_tuple()))
         except TimeoutException as e:
             if raise_exception:
                 raise e
                 # TODO: replicar esto en todos los waits que lanzan excepción.
 
-    def wait_element_to_be_invisible(self, locator: BSLocator, raise_exception: bool = False,
-                                     tolerance_time: float = 10):
+    def wait_element_to_be_invisible(self, locator: BSLocator, timeout: float = 10,
+                                     raise_exception: bool = False):
         try:
-            WebDriverWait(self.driver, tolerance_time).until(EC.invisibility_of_element_located(locator.as_tuple()))
+            WebDriverWait(self.driver, timeout).until(EC.invisibility_of_element_located(locator.as_tuple()))
         except TimeoutException as e:
             if raise_exception: raise e
 
@@ -222,6 +243,7 @@ class BSWebDriverSync(BSWebPilotSync):
             if raise_exception: raise e
 
     # Aux
+    @override
     def get_current_url(self) -> str:
         return self.driver.current_url
 
@@ -236,8 +258,31 @@ class BSWebDriverSync(BSWebPilotSync):
     def execute_script(self, script: str) -> None:
         self.driver.execute_script(script)
 
-    def switch_to_iframe(self, iframe_locator: BSLocator) -> None:
-        self.driver.switch_to.frame(self.driver.find_element(iframe_locator.value))
+    _VALID_BY_VALUES: frozenset[str] = frozenset({
+        By.ID, By.XPATH, By.CSS_SELECTOR, By.CLASS_NAME,
+        By.TAG_NAME, By.NAME, By.LINK_TEXT, By.PARTIAL_LINK_TEXT,
+    })
+
+    @staticmethod
+    def _locator_to_by(locator: BSLocator) -> By:
+        """
+        Extrae el valor By de Selenium a partir de un BSLocator.
+        BSLocator.by ya almacena directamente las constantes de By (By.ID, By.XPATH, etc.),
+        por lo que este método sirve como punto de conversión explícita y como puente
+        para cuando BSLocator migre a su propio enum interno.
+        """
+        if locator.by not in BSWebDriverSync._VALID_BY_VALUES:
+            raise ValueError(f"Tipo de locator no soportado: {locator.by!r}")
+        return cast(By, cast(object, locator.by))
+
+    def switch_to_frame(self, iframe_locator: BSLocator) -> None:
+        WebDriverWait(self.driver, 10).until(
+            EC.frame_to_be_available_and_switch_to_it(iframe_locator.as_tuple())
+        )
+
+    def switch_to_default_content(self) -> None:
+        self.driver.switch_to.default_content()
+
 
     @override
     def save_screenshot(self, file_path: str = "screenshot.png"):

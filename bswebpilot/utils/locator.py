@@ -12,6 +12,8 @@ class BSLocator:
     def as_tuple(self) -> tuple[str, str]:
         return self.by, self.value
 
+    # TODO: homogeneizar nuestro by con el de selenium. incluir más localizadores, además de xpath y css
+
     # TODO: método que convierta selectores css en xpath (si el selector css devuelve múltiples, el xpath debe devolver
     #  los mismo). Para que funcione el concatenate con diferentes tipos
 
