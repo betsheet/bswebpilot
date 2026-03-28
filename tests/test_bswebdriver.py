@@ -40,6 +40,7 @@ def driver():
     y lo cierra automáticamente al terminar.
     """
     wd = BSWebDriverSync(is_headless=True)
+    wd.initialize()
     yield wd
     wd.quit()
 
@@ -82,12 +83,14 @@ class TestBSWebDriverInit:
     def test_driver_starts_and_quits(self):
         """BSWebDriver arranca correctamente y se cierra sin errores."""
         wd = BSWebDriverSync(is_headless=True)
+        wd.initialize()
         assert wd.driver is not None
         wd.quit()
 
     def test_driver_is_headless_by_default_param(self):
         """El driver creado con is_headless=True expone un objeto driver válido."""
         wd = BSWebDriverSync(is_headless=True)
+        wd.initialize()
         try:
             assert wd.driver is not None
         finally:
@@ -96,6 +99,7 @@ class TestBSWebDriverInit:
     def test_default_waiting_times(self):
         """Los tiempos de espera por defecto deben tener valores razonables."""
         wd = BSWebDriverSync(is_headless=True)
+        wd.initialize()
         try:
             assert wd.medium_waiting_time > 0
             assert wd.short_waiting_time > 0
@@ -300,6 +304,7 @@ class TestBSWebDriverVisible:
         """Arranca Chrome visible, navega a VISIBLE_TEST_URL y verifica la URL."""
         wd = BSWebDriverSync(is_headless=False)
         try:
+            wd.initialize()
             wd.navigate_to(VISIBLE_TEST_URL)
             wd.wait_page_to_be_loaded(max_time=30)
             current_url = wd.get_current_url()

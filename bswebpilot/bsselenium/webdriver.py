@@ -187,12 +187,14 @@ class BSWebDriverSync(BSWebPilotSync):
         return not self.is_element_present(locator, timeout)
 
     @override
-    def is_element_visible(self, locator: BSLocator, timeout: float = 10):
-        return self.is_element_present(locator, timeout) and self.find_element(locator).is_displayed()
+    def is_element_visible(self, locator: BSLocator, timeout: float = 10, tolerance_time: float | None = None):
+        t = tolerance_time if tolerance_time is not None else timeout
+        return self.is_element_present(locator, t) and self.find_element(locator).is_displayed()
 
-    def is_element_clickable(self, locator: BSLocator, timeout: float = 10):
+    def is_element_clickable(self, locator: BSLocator, timeout: float = 10, tolerance_time: float | None = None):
+        t = tolerance_time if tolerance_time is not None else timeout
         try:
-            WebDriverWait(self.driver, timeout).until(EC.element_to_be_clickable(locator.as_tuple()))
+            WebDriverWait(self.driver, t).until(EC.element_to_be_clickable(locator.as_tuple()))
             return True
         except TimeoutException:
             return False
@@ -256,6 +258,11 @@ class BSWebDriverSync(BSWebPilotSync):
 
     def scroll_to_page_top(self) -> None:
         self.execute_script("window.scrollTo(0, 0);")
+
+    def get_class(self, locator: BSLocator) -> str:
+        """Devuelve el valor del atributo 'class' del elemento localizado (cadena vacía si no lo tiene)."""
+        self.wait_element_to_be_present(locator)
+        return self.find_element(locator).get_attribute("class") or ""
 
     def execute_script(self, script: str) -> None:
         self.driver.execute_script(script)

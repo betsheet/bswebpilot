@@ -1,4 +1,3 @@
-import pytest
 import pytest_asyncio
 from bswebpilot.bsplaywright.bscmfx import BSCmfx
 
