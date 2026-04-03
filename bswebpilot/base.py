@@ -99,7 +99,6 @@ class BSWebPilotSync(ABC):
     @abstractmethod
     def wait_element_to_be_invisible(self, locator: BSLocator, timeout: float = 10) -> None:
         pass
-        pass
 
     @abstractmethod
     def wait_page_to_be_loaded(self, timeout: float = 10) -> None:
