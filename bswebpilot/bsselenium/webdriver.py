@@ -246,7 +246,7 @@ class BSWebDriverSync(BSWebPilotSync):
         except Exception as e:
             if raise_exception: raise e
 
-    def wait_text_to_contain(self, locator: BSLocator, content: str, tolerance_time: float = 10,
+    def wait_element_text_to_contain(self, locator: BSLocator, content: str, tolerance_time: float = 10,
                              raise_exception: bool = False):
         try:
             WebDriverWait(self.driver, tolerance_time).until(lambda d: content in self.find_element(locator).text)

@@ -106,6 +106,11 @@ class BSWebPilotSync(ABC):
         pass
 
     @abstractmethod
+    def wait_element_text_to_contain(self, locator: BSLocator, content: str, tolerance_time: float = 10,
+                                     raise_exception: bool = False):
+        pass
+
+    @abstractmethod
     def scroll_element_into_view(self, locator: BSLocator, timeout: float = 10) -> None:
         pass
 
