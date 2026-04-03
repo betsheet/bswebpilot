@@ -246,6 +246,13 @@ class BSWebDriverSync(BSWebPilotSync):
         except Exception as e:
             if raise_exception: raise e
 
+    def wait_text_to_contain(self, locator: BSLocator, content: str, tolerance_time: float = 10,
+                             raise_exception: bool = False):
+        try:
+            WebDriverWait(self.driver, tolerance_time).until(lambda d: content in self.find_element(locator).text)
+        except Exception as e:
+            if raise_exception: raise e
+
     # Aux
     @override
     def get_current_url(self) -> str:
@@ -299,7 +306,6 @@ class BSWebDriverSync(BSWebPilotSync):
     def switch_to_default_content(self) -> None:
         self.driver.switch_to.default_content()
 
-
     @override
     def save_screenshot(self, file_path: str = "screenshot.png"):
         self.driver.save_screenshot(file_path)
@@ -349,5 +355,3 @@ class BSWebDriverSync(BSWebPilotSync):
         path = manager.install()
         BSWebDriverSync._codesign_if_macos(path)
         return path
-
-
